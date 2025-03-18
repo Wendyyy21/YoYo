@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/views/widgets/chat_widget.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class Elderly_ChatPage extends StatefulWidget {
   const Elderly_ChatPage({super.key});
@@ -28,7 +29,7 @@ class _Elderly_ChatPageState extends State<Elderly_ChatPage> {
     super.initState();
     _model = GenerativeModel(
       model: 'gemini-2.0-flash', // Correct model name
-      apiKey: 'AIzaSyAt5yB4uvBXTOButT2qQiiR0d8R87Nn4QA',
+      apiKey: dotenv.env['GEMINI_API_KEY']!,
     );
     _chat.add(Content('user', [ // Use add to add to list
       TextPart('You are a helpful assistant for elderly people.'),
@@ -146,6 +147,13 @@ class _Elderly_ChatPageState extends State<Elderly_ChatPage> {
                       hintText: 'Type anything',
                       border: OutlineInputBorder(),
                     ),
+                    onSubmitted:  (value) {
+                      updateChat(
+                      userInputController.text,
+                      '');
+
+                      userInputController.clear();
+                    },
                   ),
                 ),
                 const SizedBox(width: 10),
