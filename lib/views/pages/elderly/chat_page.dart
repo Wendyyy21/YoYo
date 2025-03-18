@@ -19,91 +19,78 @@ class _Elderly_ChatPageState extends State<Elderly_ChatPage> {
       isLoading: false,
     ),
   ];
-  
+
   late GenerativeModel _model;
-  late Content _chat;
+  List<Content> _chat = []; // Changed to List<Content>
 
   @override
   void initState() {
     super.initState();
     _model = GenerativeModel(
-      model: 'gemini-2.0-flash',
+      model: 'gemini-2.0-flash', // Correct model name
       apiKey: 'AIzaSyAt5yB4uvBXTOButT2qQiiR0d8R87Nn4QA',
     );
-    _chat = Content('user', [TextPart('You are a helpful assistant for elderly people.')]);
-    _chat = Content('user', [TextPart('Your name is YoYo. Please keep the conversation light and friendly.')]);
-    _chat = Content('user', [TextPart('You can help elderly people with their daily tasks and provide companionship.')]);
-    _chat = Content('user', [TextPart('You can also provide information on various topics and answer questions.')]);
-    _chat = Content('user', [TextPart('But keep the responses short (a paragraph), unless otherwise requested.')]);
+    _chat.add(Content('user', [ // Use add to add to list
+      TextPart('You are a helpful assistant for elderly people.'),
+      TextPart('Your name is YoYo. Please keep the conversation light and friendly.'),
+      TextPart('You can help elderly people with their daily tasks and provide companionship.'),
+      TextPart('You can also provide information on various topics and answer questions.'),
+      TextPart('But keep the responses short (a paragraph), unless otherwise requested.'),
+    ]));
   }
 
-Future<void> updateChat(String user_text, String AI_text) async {
+  Future<void> updateChat(String user_text, String AI_text) async {
     setState(() {
-        messages.add(SizedBox(height: 10.0));
-        messages.add(userMessageWidget(message: user_text));
+      messages.add(SizedBox(height: 10.0));
+      messages.add(userMessageWidget(message: user_text));
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (scrollController.hasClients) {
-            scrollController.animateTo(
-                scrollController.position.maxScrollExtent,
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeOut,
-            );
-        }
+      if (scrollController.hasClients) {
+        scrollController.animateTo(
+          scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
     });
 
     setState(() {
-        messages.add(SizedBox(height: 10.0));
-        messages.add(AIMessageWidget(response: '', isLoading: true)); //show loading indicator
+      messages.add(SizedBox(height: 10.0));
+      messages.add(AIMessageWidget(response: '', isLoading: true)); //show loading indicator
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (scrollController.hasClients) {
-            scrollController.animateTo(
-                scrollController.position.maxScrollExtent,
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeOut,
-            );
-        }
+      if (scrollController.hasClients) {
+        scrollController.animateTo(
+          scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
     });
 
     try {
-        _chat.parts.add(TextPart(user_text));
-        final response = await _model.generateContent([_chat]);
-        final text = response.text;
-        if (text != null) {
-            setState(() {
-                messages.removeLast(); //remove loading indicator
-                messages.add(AIMessageWidget(response: text, isLoading: false));
-            });
-            _chat.parts.add(TextPart(text));
-        } else {
-            setState(() {
-                messages.removeLast(); //remove loading indicator
-                messages.add(AIMessageWidget(response: "Error: Could not get a response", isLoading: false));
-            });
-        }
-    } catch (e) {
+      _chat.add(Content('user', [TextPart(user_text)])); // User message, added to list
+      final response = await _model.generateContent(_chat); // Pass the list
+      final text = response.text;
+      if (text != null) {
         setState(() {
-            messages.removeLast(); //remove loading indicator
-            messages.add(AIMessageWidget(response: "Error: $e", isLoading: false));
+          messages.removeLast(); //remove loading indicator
+          messages.add(AIMessageWidget(response: text, isLoading: false));
         });
+        _chat.add(Content('model', [TextPart(text)])); // AI message, added to list
+      } else {
+        setState(() {
+          messages.removeLast(); //remove loading indicator
+          messages.add(AIMessageWidget(response: "Error: Could not get a response", isLoading: false));
+        });
+      }
+    } catch (e) {
+      setState(() {
+        messages.removeLast(); //remove loading indicator
+        messages.add(AIMessageWidget(response: "Error: $e", isLoading: false));
+      });
     }
-}
-
-  //   setState(() {
-  //     messages.add(SizedBox(height: 10.0));
-  //     messages.add(AIMessageWidget(response: AI_text, isLoading: true));
-  //   });
-  //   WidgetsBinding.instance.addPostFrameCallback((_) {
-  //     if (scrollController.hasClients) {
-  //       scrollController.animateTo(
-  //         scrollController.position.maxScrollExtent,
-  //         duration: const Duration(milliseconds: 300),
-  //         curve: Curves.easeOut,
-  //       );
-  //     }
-  //   });
-  // }
+  }
 
   @override
   void dispose() {
