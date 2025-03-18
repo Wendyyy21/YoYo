@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/views/widgets/chat_widget.dart';
+import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class Elderly_ChatPage extends StatefulWidget {
   const Elderly_ChatPage({super.key});
@@ -19,7 +21,26 @@ class _Elderly_ChatPageState extends State<Elderly_ChatPage> {
     ),
   ];
 
-  void updateChat(String user_text, String AI_text) {
+  late GenerativeModel _model;
+  List<Content> _chat = []; // Changed to List<Content>
+
+  @override
+  void initState() {
+    super.initState();
+    _model = GenerativeModel(
+      model: 'gemini-2.0-flash', // Correct model name
+      apiKey: dotenv.env['GEMINI_API_KEY']!,
+    );
+    _chat.add(Content('user', [ // Use add to add to list
+      TextPart('You are a helpful assistant for elderly people.'),
+      TextPart('Your name is YoYo. Please keep the conversation light and friendly.'),
+      TextPart('You can help elderly people with their daily tasks and provide companionship.'),
+      TextPart('You can also provide information on various topics and answer questions.'),
+      TextPart('But keep the responses short (a paragraph), unless otherwise requested.'),
+    ]));
+  }
+
+  Future<void> updateChat(String user_text, String AI_text) async {
     setState(() {
       messages.add(SizedBox(height: 10.0));
       messages.add(userMessageWidget(message: user_text));
@@ -36,7 +57,7 @@ class _Elderly_ChatPageState extends State<Elderly_ChatPage> {
 
     setState(() {
       messages.add(SizedBox(height: 10.0));
-      messages.add(AIMessageWidget(response: AI_text, isLoading: true));
+      messages.add(AIMessageWidget(response: '', isLoading: true)); //show loading indicator
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (scrollController.hasClients) {
@@ -47,6 +68,29 @@ class _Elderly_ChatPageState extends State<Elderly_ChatPage> {
         );
       }
     });
+
+    try {
+      _chat.add(Content('user', [TextPart(user_text)])); // User message, added to list
+      final response = await _model.generateContent(_chat); // Pass the list
+      final text = response.text;
+      if (text != null) {
+        setState(() {
+          messages.removeLast(); //remove loading indicator
+          messages.add(AIMessageWidget(response: text, isLoading: false));
+        });
+        _chat.add(Content('model', [TextPart(text)])); // AI message, added to list
+      } else {
+        setState(() {
+          messages.removeLast(); //remove loading indicator
+          messages.add(AIMessageWidget(response: "Error: Could not get a response", isLoading: false));
+        });
+      }
+    } catch (e) {
+      setState(() {
+        messages.removeLast(); //remove loading indicator
+        messages.add(AIMessageWidget(response: "Error: $e", isLoading: false));
+      });
+    }
   }
 
   @override
@@ -103,14 +147,21 @@ class _Elderly_ChatPageState extends State<Elderly_ChatPage> {
                       hintText: 'Type anything',
                       border: OutlineInputBorder(),
                     ),
+                    onSubmitted:  (value) {
+                      updateChat(
+                      userInputController.text,
+                      '');
+
+                      userInputController.clear();
+                    },
                   ),
                 ),
                 const SizedBox(width: 10),
                 IconButton(
-                  onPressed: () {
-                    updateChat(
+                  onPressed: () async {
+                    await updateChat(
                       userInputController.text,
-                      'This is a dummy response', //TODO: replace with actual response
+                      '', //removed dummy reply
                     );
                     userInputController.clear();
                   },
