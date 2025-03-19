@@ -18,7 +18,10 @@ class _Elderly_NavBarState extends State<Elderly_NavBar> {
           destinations: [
             NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
             NavigationDestination(icon: Icon(Icons.chat), label: 'Chat'),
-            NavigationDestination(icon: Icon(Icons.person), label: 'Profile'),
+            NavigationDestination(
+              icon: Icon(Icons.sports_esports),
+              label: 'Play',
+            ),
           ],
           onDestinationSelected: (value) {
             selectedPageNotifier.value = value;
