@@ -35,7 +35,8 @@ class _Elderly_ChatPageState extends State<Elderly_ChatPage> {
       apiKey = tempApiKey;
     } else {
       // Native: Get API key from .env file.
-      apiKey = dotenv.env['GEMINI_API_KEY']!;
+      // apiKey = dotenv.env['GEMINI_API_KEY']!;
+      apiKey = "AIzaSyAt5yB4uvBXTOButT2qQiiR0d8R87Nn4QA";
     }
 
     _model = GenerativeModel(

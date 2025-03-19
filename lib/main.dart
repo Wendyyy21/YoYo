@@ -18,7 +18,8 @@ Future<void> main() async {
     // flutter run -d chrome --dart-define=API_KEY="YOUR_API_KEY"
   } else {
     // Native: Load .env file using flutter_dotenv.
-    await dotenv.load(fileName: ".env");
+    // await dotenv.load(fileName: "/Users/jordan/Desktop/Live_Projects/KitaHack 2025/YoYo/.env");
+    // print('Native API Key: ${dotenv.env['GEMINI_API_KEY']}');
   }
 
   // Initialize Firebase (common for both web and native).
