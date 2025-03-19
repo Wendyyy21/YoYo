@@ -64,7 +64,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '912055646294',
     projectId: 'yoyo-9fb3f',
     storageBucket: 'yoyo-9fb3f.firebasestorage.app',
-    iosBundleId: 'com.example.frontend',
+    iosBundleId: 'com.petrichor4.yoyo',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
@@ -73,7 +73,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '912055646294',
     projectId: 'yoyo-9fb3f',
     storageBucket: 'yoyo-9fb3f.firebasestorage.app',
-    iosBundleId: 'com.example.frontend',
+    iosBundleId: 'com.petrichor4.yoyo',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
