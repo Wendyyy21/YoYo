@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/data/constants.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:frontend/views/pages/accounttype_page.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -10,44 +11,49 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
+  TextEditingController emailController = TextEditingController();
   TextEditingController usernameController = TextEditingController();
   TextEditingController pwController1 = TextEditingController();
   bool _obscureText1 = true;
   TextEditingController pwController2 = TextEditingController();
   bool _obscureText2 = true;
 
-  void validateInput(
-    TextEditingController usernameController,
-    TextEditingController pwController1,
-    TextEditingController pwController2,
-  ) {
-    if (usernameController.text.trim().isEmpty ||
-        pwController1.text.trim().isEmpty ||
-        pwController2.text.trim().isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Please enter all details.')));
-      return;
-    }
+  Future<void> _register() async {
     if (pwController1.text != pwController2.text) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Passwords do not match.')));
       return;
     }
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) {
-          return AccountTypePage();
-        },
-      ),
-    );
+
+    try {
+      await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: pwController1.text.trim(),
+      );
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder:
+              (context) => AccountTypePage(
+                email: emailController.text.trim(),
+                password: pwController1.text.trim(),
+                username: usernameController.text.trim(),
+              ),
+        ),
+      );
+    } on FirebaseAuthException catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to register: ${e.message}')),
+      );
+    }
   }
 
   @override
   void dispose() {
     usernameController.dispose();
+    emailController.dispose(); //dispose email controller
     pwController1.dispose();
     pwController2.dispose();
     super.dispose();
@@ -73,6 +79,17 @@ class _RegisterPageState extends State<RegisterPage> {
                       color: AppColors.titleGreen,
                       fontSize: 80.0,
                       fontFamily: 'SpicyRice',
+                    ),
+                  ),
+                  const SizedBox(height: 10.0),
+                  SizedBox(
+                    width: 350.0,
+                    child: TextField(
+                      controller: emailController,
+                      decoration: InputDecoration(
+                        hintText: 'Email',
+                        border: OutlineInputBorder(),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 10.0),
@@ -141,13 +158,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       fixedSize: Size(250.0, 50.0),
                       side: BorderSide(color: AppColors.buttonTeal, width: 1.5),
                     ),
-                    onPressed: () {
-                      validateInput(
-                        usernameController,
-                        pwController1,
-                        pwController2,
-                      );
-                    },
+                    onPressed: _register, // Call _register directly
                     child: const Text('Next', style: TextStyle(fontSize: 20.0)),
                   ),
                   const SizedBox(height: 160.0),
