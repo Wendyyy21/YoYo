@@ -13,9 +13,7 @@ class Elderly_ChatPage extends StatefulWidget {
 
 class _Elderly_ChatPageState extends State<Elderly_ChatPage> {
   TextEditingController userInputController = TextEditingController();
-  ScrollController scrollController = ScrollController();
   List<Widget> messages = [
-    SizedBox(height: 10.0),
     AIMessageWidget(
       response: 'Hi, I\'m YoYo! Type in the text box below to start chatting!',
       isLoading: false,
@@ -54,136 +52,60 @@ class _Elderly_ChatPageState extends State<Elderly_ChatPage> {
 
   Future<void> updateChat(String user_text, String AI_text) async {
     setState(() {
-      messages.add(SizedBox(height: 10.0));
       messages.add(userMessageWidget(message: user_text));
     });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (scrollController.hasClients) {
-        scrollController.animateTo(
-          scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      }
-    });
-
     setState(() {
-      messages.add(SizedBox(height: 10.0));
-      messages.add(AIMessageWidget(response: '', isLoading: true)); //show loading indicator
+      messages.add(AIMessageWidget(response: AI_text, isLoading: true));
     });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (scrollController.hasClients) {
-        scrollController.animateTo(
-          scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      }
-    });
-
-    try {
-      _chat.add(Content('user', [TextPart(user_text)])); // User message, added to list
-      final response = await _model.generateContent(_chat); // Pass the list
-      final text = response.text;
-      if (text != null) {
-        setState(() {
-          messages.removeLast(); //remove loading indicator
-          messages.add(AIMessageWidget(response: text, isLoading: false));
-        });
-        _chat.add(Content('model', [TextPart(text)])); // AI message, added to list
-      } else {
-        setState(() {
-          messages.removeLast(); //remove loading indicator
-          messages.add(AIMessageWidget(response: "Error: Could not get a response", isLoading: false));
-        });
-      }
-    } catch (e) {
-      setState(() {
-        messages.removeLast(); //remove loading indicator
-        messages.add(AIMessageWidget(response: "Error: $e", isLoading: false));
-      });
-    }
   }
 
   @override
   void dispose() {
     userInputController.dispose();
-    scrollController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Expanded(
-          child: SingleChildScrollView(
-            controller: scrollController,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                vertical: 0.0,
-                horizontal: 20.0,
-              ),
+    return Padding(
+      padding: const EdgeInsets.all(20.0),
+      child: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: messages,
               ),
             ),
           ),
-        ),
-        const SizedBox(height: 10),
-        Container(
-          width: double.infinity,
-          decoration: BoxDecoration(
-            color: const Color.fromARGB(255, 245, 243, 243),
-            border: Border(
-              top: BorderSide(
-                color: const Color.fromARGB(255, 222, 220, 220),
-                width: 1.0,
-              ),
-            ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              vertical: 10.0,
-              horizontal: 20.0,
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: userInputController,
-                    decoration: const InputDecoration(
-                      fillColor: Color.fromARGB(255, 253, 252, 252),
-                      filled: true,
-                      hintText: 'Type anything',
-                      border: OutlineInputBorder(),
-                    ),
-                    onSubmitted:  (value) {
-                      updateChat(
-                      userInputController.text,
-                      '');
-
-                      userInputController.clear();
-                    },
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: userInputController,
+                  decoration: const InputDecoration(
+                    hintText: 'Type anything',
+                    border: OutlineInputBorder(),
                   ),
                 ),
-                const SizedBox(width: 10),
-                IconButton(
-                  onPressed: () async {
-                    await updateChat(
-                      userInputController.text,
-                      '', //removed dummy reply
-                    );
-                    userInputController.clear();
-                  },
-                  icon: const Icon(Icons.send),
-                ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 10),
+              IconButton(
+                onPressed: () {
+                  updateChat(
+                    userInputController.text,
+                    'This is a dummy response',
+                  );
+                  userInputController.clear();
+                },
+                icon: const Icon(Icons.send),
+              ),
+            ],
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
