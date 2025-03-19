@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "137606660351",
+    "project_id": "yoyo-jordan",
+    "storage_bucket": "yoyo-jordan.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:137606660351:android:71b3d27c15f866ef52ccca",
+        "android_client_info": {
+          "package_name": "com.example.frontend"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCIwXOQghp8F1qDB7ZuDigCazAy1S2PLLI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:137606660351:android:c5756f40ce41821e52ccca",
+        "android_client_info": {
+          "package_name": "com.petrichor4.yoyo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCIwXOQghp8F1qDB7ZuDigCazAy1S2PLLI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

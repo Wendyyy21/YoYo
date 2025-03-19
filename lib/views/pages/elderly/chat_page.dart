@@ -22,7 +22,7 @@ class _Elderly_ChatPageState extends State<Elderly_ChatPage> {
   ];
 
   late GenerativeModel _model;
-  List<Content> _chat = [];
+  final List<Content> _chat = [];
 
   @override
   void initState() {
@@ -40,10 +40,10 @@ class _Elderly_ChatPageState extends State<Elderly_ChatPage> {
     ]));
   }
 
-  Future<void> updateChat(String user_text, String AI_text) async {
+  Future<void> updateChat(String userText, String aiText) async {
     setState(() {
       messages.add(SizedBox(height: 10.0));
-      messages.add(userMessageWidget(message: user_text));
+      messages.add(userMessageWidget(message: userText));
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (scrollController.hasClients) {
@@ -70,7 +70,7 @@ class _Elderly_ChatPageState extends State<Elderly_ChatPage> {
     });
 
     try {
-      _chat.add(Content('user', [TextPart(user_text)]));
+      _chat.add(Content('user', [TextPart(userText)]));
       final response = await _model.generateContent(_chat);
       final text = response.text;
       if (text != null) {
