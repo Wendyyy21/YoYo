@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/views/widgets/chat_widget.dart';
+import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter/foundation.dart';
 
 class Elderly_ChatPage extends StatefulWidget {
   const Elderly_ChatPage({super.key});
@@ -17,7 +20,37 @@ class _Elderly_ChatPageState extends State<Elderly_ChatPage> {
     ),
   ];
 
-  void updateChat(String user_text, String AI_text) {
+  late GenerativeModel _model;
+  List<Content> _chat = []; // Changed to List<Content>
+
+  @override
+  void initState() {
+    super.initState();
+    String apiKey = '';
+    if (kIsWeb) {
+      // Web: Get API key from compile-time variable.
+      const tempApiKey = String.fromEnvironment('GEMINI_API_KEY');
+      apiKey = tempApiKey;
+    } else {
+      // Native: Get API key from .env file.
+      // apiKey = dotenv.env['GEMINI_API_KEY']!;
+      apiKey = "AIzaSyAt5yB4uvBXTOButT2qQiiR0d8R87Nn4QA";
+    }
+
+    _model = GenerativeModel(
+      model: 'gemini-2.0-flash', // Correct model name
+      apiKey: apiKey
+    );
+    _chat.add(Content('user', [ // Use add to add to list
+      TextPart('You are a helpful assistant for elderly people.'),
+      TextPart('Your name is YoYo. Please keep the conversation light and friendly.'),
+      TextPart('You can help elderly people with their daily tasks and provide companionship.'),
+      TextPart('You can also provide information on various topics and answer questions.'),
+      TextPart('But keep the responses short (a paragraph), unless otherwise requested.'),
+    ]));
+  }
+
+  Future<void> updateChat(String user_text, String AI_text) async {
     setState(() {
       messages.add(userMessageWidget(message: user_text));
     });

@@ -1,7 +1,19 @@
+// main.dart
 import 'package:flutter/material.dart';
 import 'package:frontend/views/pages/welcome_page.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
+
+  // Initialize Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform, // Use generated options
+  );
+
   runApp(const MyApp());
 }
 

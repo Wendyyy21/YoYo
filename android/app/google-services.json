@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "912055646294",
+    "project_id": "yoyo-9fb3f",
+    "storage_bucket": "yoyo-9fb3f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:912055646294:android:e820e8257b5b1d8d9ee3f7",
+        "android_client_info": {
+          "package_name": "com.example.frontend"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB_5z0UthtcHKVxx_mSs-YOnya56mMcOwI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
