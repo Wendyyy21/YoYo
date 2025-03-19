@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/data/constants.dart';
-import 'package:frontend/views/elderly_widget_tree.dart';
+import 'package:frontend/views/young_widget_tree.dart';
+
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -30,7 +31,7 @@ class _LoginPageState extends State<LoginPage> {
       context,
       MaterialPageRoute(
         builder: (context) {
-          return ElderlyWidgetTree();
+          return YoungWidgetTree();
         },
       ),
       (route) => false,
