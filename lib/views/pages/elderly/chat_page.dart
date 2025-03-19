@@ -22,16 +22,16 @@ class _Elderly_ChatPageState extends State<Elderly_ChatPage> {
   ];
 
   late GenerativeModel _model;
-  List<Content> _chat = []; // Changed to List<Content>
+  List<Content> _chat = [];
 
   @override
   void initState() {
     super.initState();
     _model = GenerativeModel(
-      model: 'gemini-2.0-flash', // Correct model name
+      model: 'gemini-2.0-flash',
       apiKey: dotenv.env['GEMINI_API_KEY']!,
     );
-    _chat.add(Content('user', [ // Use add to add to list
+    _chat.add(Content('user', [
       TextPart('You are a helpful assistant for elderly people.'),
       TextPart('Your name is YoYo. Please keep the conversation light and friendly.'),
       TextPart('You can help elderly people with their daily tasks and provide companionship.'),
@@ -70,15 +70,15 @@ class _Elderly_ChatPageState extends State<Elderly_ChatPage> {
     });
 
     try {
-      _chat.add(Content('user', [TextPart(user_text)])); // User message, added to list
-      final response = await _model.generateContent(_chat); // Pass the list
+      _chat.add(Content('user', [TextPart(user_text)]));
+      final response = await _model.generateContent(_chat);
       final text = response.text;
       if (text != null) {
         setState(() {
           messages.removeLast(); //remove loading indicator
           messages.add(AIMessageWidget(response: text, isLoading: false));
         });
-        _chat.add(Content('model', [TextPart(text)])); // AI message, added to list
+        _chat.add(Content('model', [TextPart(text)]));
       } else {
         setState(() {
           messages.removeLast(); //remove loading indicator
