@@ -32,7 +32,7 @@ class _RegisterPageState extends State<RegisterPage> {
         password: pwController1.text.trim(),
       );
 
-      Navigator.pushReplacement(
+      final result = await Navigator.push(
         context,
         MaterialPageRoute(
           builder:
@@ -43,6 +43,15 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
         ),
       );
+
+      if (result != null) {
+        Navigator.pop(context, {
+          'email': emailController.text.trim(),
+          'password': pwController1.text.trim(),
+          'username': usernameController.text.trim(),
+          'role': result,
+        });
+      }
     } on FirebaseAuthException catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to register: ${e.message}')),

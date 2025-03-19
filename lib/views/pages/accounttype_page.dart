@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/data/constants.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:frontend/views/pages/welcome_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:frontend/views/elderly_widget_tree.dart';
-import 'package:frontend/views/young_widget_tree.dart';
 import 'package:frontend/views/widgets/accounttype_widget.dart';
 
 class AccountTypePage extends StatefulWidget {
@@ -31,7 +30,7 @@ class _AccountTypePageState extends State<AccountTypePage> {
     });
   }
 
-  void validateAccountType() async {
+  Future<void> validateAccountType() async {
     if (selectedType == 0 || selectedType == 1) {
       try {
         UserCredential userCredential = await FirebaseAuth.instance
@@ -50,17 +49,14 @@ class _AccountTypePageState extends State<AccountTypePage> {
               'username': widget.username,
             });
 
-        if (selectedType == 0) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => ElderlyWidgetTree()),
-          );
-        } else {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => youngWidgetTree()),
-          );
-        }
+        // Navigate back to the welcome page
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(
+            builder: (context) => WelcomePage(),
+          ), // Replace YourWelcomePage
+          (route) => route.isFirst, // Go back to the first route (welcome page)
+        );
       } on FirebaseAuthException catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to save role: ${e.message}')),
