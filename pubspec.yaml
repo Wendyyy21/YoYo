@@ -84,6 +84,9 @@ flutter:
     - family: Kalam
       fonts:
         - asset: assets/fonts/Kalam-Bold.ttf
+    - family: WinkySans
+      fonts:
+        - asset: assets/fonts/WinkySans-VariableFont_wght.ttf
   #       - asset: fonts/TrajanPro_Bold.ttf
   #         weight: 700
   #

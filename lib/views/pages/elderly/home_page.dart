@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/data/constants.dart';
+import 'package:frontend/data/notifiers.dart';
+import 'package:frontend/views/pages/elderly/game_page.dart';
 import 'package:lottie/lottie.dart';
 
 class Elderly_HomePage extends StatelessWidget {
@@ -24,43 +26,48 @@ class Elderly_HomePage extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 20.0),
-              const Card(
-                color: Color.fromARGB(255, 247, 240, 168),
-                elevation: 10.0,
-                child: Padding(
-                  padding: EdgeInsets.all(20.0),
-                  child: Column(
-                    children: [
-                      Align(
-                        alignment: Alignment.topLeft,
-                        child: Text(
-                          'Continue playing',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 26.0,
+              GestureDetector(
+                onTap: () {
+                  selectedPageNotifier.value = 2;
+                },
+                child: const Card(
+                  color: Color.fromARGB(255, 247, 240, 168),
+                  elevation: 10.0,
+                  child: Padding(
+                    padding: EdgeInsets.all(20.0),
+                    child: Column(
+                      children: [
+                        Align(
+                          alignment: Alignment.topLeft,
+                          child: Text(
+                            'Continue playing',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 26.0,
+                            ),
                           ),
                         ),
-                      ),
-                      SizedBox(height: 20.0),
-                      Row(
-                        children: [
-                          Image(
-                            image: AssetImage(
-                              'assets/images/wordsearch_logo.png',
+                        SizedBox(height: 20.0),
+                        Row(
+                          children: [
+                            Image(
+                              image: AssetImage(
+                                'assets/images/wordle_logo.png',
+                              ),
+                              height: 120.0,
                             ),
-                            height: 120.0,
-                          ),
-                          SizedBox(width: 20.0),
-                          Text(
-                            'Word Search',
-                            style: TextStyle(
-                              fontSize: 30.0,
-                              fontWeight: FontWeight.bold,
+                            SizedBox(width: 20.0),
+                            Text(
+                              'Wordle',
+                              style: TextStyle(
+                                fontSize: 30.0,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
