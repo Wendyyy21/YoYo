@@ -1,10 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/data/constants.dart';
-import 'package:frontend/views/pages/linkaccount_page.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:frontend/views/pages/welcome_page.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:frontend/views/widgets/accounttype_widget.dart';
 
 class AccountTypePage extends StatefulWidget {
-  const AccountTypePage({super.key});
+  final String email;
+  final String password;
+  final String username;
+
+  const AccountTypePage({
+    super.key,
+    required this.email,
+    required this.password,
+    required this.username,
+  });
 
   @override
   State<AccountTypePage> createState() => _AccountTypePageState();
@@ -19,16 +30,38 @@ class _AccountTypePageState extends State<AccountTypePage> {
     });
   }
 
-  void validateAccountType() {
+  Future<void> validateAccountType() async {
     if (selectedType == 0 || selectedType == 1) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) {
-            return LinkAccountPage();
-          },
-        ),
-      );
+      try {
+        UserCredential userCredential = await FirebaseAuth.instance
+            .signInWithEmailAndPassword(
+              email: widget.email,
+              password: widget.password,
+            );
+
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userCredential.user!.uid)
+            .set({
+              'email': widget.email,
+              'uid': userCredential.user!.uid,
+              'role': selectedType == 0 ? 'elder' : 'younger',
+              'username': widget.username,
+            });
+
+        // Navigate back to the welcome page
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(
+            builder: (context) => WelcomePage(),
+          ), // Replace YourWelcomePage
+          (route) => route.isFirst, // Go back to the first route (welcome page)
+        );
+      } on FirebaseAuthException catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to save role: ${e.message}')),
+        );
+      }
     } else {
       ScaffoldMessenger.of(
         context,
