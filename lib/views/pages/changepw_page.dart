@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ChangePasswordPage extends StatefulWidget {
   const ChangePasswordPage({super.key});
@@ -22,6 +23,55 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     newPwController1.dispose();
     newPwController2.dispose();
     super.dispose();
+  }
+
+  Future<void> _changePassword() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      final cred = EmailAuthProvider.credential(
+        email: user!.email!,
+        password: currentPwController.text,
+      );
+      await user.reauthenticateWithCredential(cred);
+
+      // Check if new password is the same as current password
+      if (newPwController1.text == currentPwController.text) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'New password cannot be the same as current password.',
+            ),
+          ),
+        );
+        return; // Stop the process if the passwords are the same
+      }
+
+      if (newPwController1.text == newPwController2.text) {
+        await user.updatePassword(newPwController1.text);
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Password successfully updated!')),
+        );
+      } else {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('New passwords do not match!')));
+      }
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'invalid-credential') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Incorrect current password entered!')),
+        );
+      } else {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: ${e.message}')));
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('An unexpected error occurred.')));
+    }
   }
 
   @override
@@ -118,24 +168,8 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text('Please enter all details!')),
                     );
-                  }
-                  //TODO: check with actual password from database
-                  else if (currentPwController.text != '111') {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Incorrect current password entered!'),
-                      ),
-                    );
-                  } else if (newPwController1.text != newPwController2.text) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('New passwords do not match!')),
-                    );
                   } else {
-                    //TODO: update password
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Password successfully updated!')),
-                    );
+                    _changePassword();
                   }
                 },
                 child: Text('Confirm'),
