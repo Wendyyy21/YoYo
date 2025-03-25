@@ -1,5 +1,7 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:english_words/english_words.dart';
 
 class WordleWidget extends StatefulWidget {
   const WordleWidget({super.key});
@@ -13,18 +15,31 @@ class _WordleWidgetState extends State<WordleWidget> {
   final int _wordLength = 5;
   final List<TextEditingController> controllers = [];
   final List<FocusNode> focusNodes = [];
-  final String answer = "TRAIN"; // TODO: replace with randomly generated word
+  String answer = "";
   int currentRow = 0;
   List<List<Color>> cellColors = [];
 
   @override
   void initState() {
     super.initState();
+    _generateRandomWord();
     for (int i = 0; i < _maxAttempts * _wordLength; i++) {
       controllers.add(TextEditingController());
       focusNodes.add(FocusNode());
     }
     resetColors();
+  }
+
+  void _generateRandomWord() {
+    final random = Random();
+    final fiveLetterWords = all.where((word) => word.length == 5).toList();
+    if (fiveLetterWords.isNotEmpty) {
+      answer =
+          fiveLetterWords[random.nextInt(fiveLetterWords.length)].toUpperCase();
+    } else {
+      // Handle the case where no 5-letter words are found (unlikely, but possible)
+      answer = "ERROR";
+    }
   }
 
   @override
@@ -185,6 +200,7 @@ class _WordleWidgetState extends State<WordleWidget> {
     setState(() {
       currentRow = 0;
       resetColors();
+      _generateRandomWord();
       for (var con in controllers) {
         con.clear();
       }
