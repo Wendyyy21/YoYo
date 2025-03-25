@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/data/constants.dart';
+import 'package:frontend/data/notifiers.dart';
 import 'package:frontend/views/elderly_widget_tree.dart';
 import 'package:frontend/views/young_widget_tree.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -47,12 +48,14 @@ class _LoginPageState extends State<LoginPage> {
 
       // Navigate based on role
       if (role == 'elder') {
+        selectedPageNotifier.value = 0;
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => ElderlyWidgetTree()),
           (route) => false,
         );
       } else {
+        selectedPageNotifier.value = 0;
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => youngWidgetTree()),

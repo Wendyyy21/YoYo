@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:frontend/data/constants.dart';
 import 'package:frontend/data/notifiers.dart';
 import 'package:frontend/views/pages/elderly/chat_page.dart';
+import 'package:frontend/views/pages/elderly/game_page.dart';
 import 'package:frontend/views/pages/elderly/home_page.dart';
 import 'package:frontend/views/pages/elderly/profile_page.dart';
 import 'package:frontend/views/widgets/elderly_navbar_widget.dart';
@@ -9,7 +10,7 @@ import 'package:frontend/views/widgets/elderly_navbar_widget.dart';
 List<Widget> pages = [
   Elderly_HomePage(),
   Elderly_ChatPage(),
-  Elderly_ProfilePage(),
+  Elderly_GamePage(),
 ];
 
 class ElderlyWidgetTree extends StatefulWidget {
@@ -34,6 +35,21 @@ class _ElderlyWidgetTreeState extends State<ElderlyWidgetTree> {
               color: AppColors.titleGreen,
             ),
           ),
+          actions: [
+            IconButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) {
+                      return Elderly_ProfilePage();
+                    },
+                  ),
+                );
+              },
+              icon: Icon(Icons.person),
+            ),
+          ],
         ),
         body: ValueListenableBuilder(
           valueListenable: selectedPageNotifier,
