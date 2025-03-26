@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/data/notifiers.dart';
 
-class young_NavBar extends StatefulWidget {
-  const young_NavBar({super.key});
+class Young_NavBar extends StatefulWidget {
+  const Young_NavBar({super.key});
 
   @override
-  State<young_NavBar> createState() => _young_NavBarState();
+  State<Young_NavBar> createState() => _Young_NavBarState();
 }
 
-class _young_NavBarState extends State<young_NavBar> {
+class _Young_NavBarState extends State<Young_NavBar> {
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder(
@@ -17,8 +17,9 @@ class _young_NavBarState extends State<young_NavBar> {
         return NavigationBar(
           destinations: [
             NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
-            NavigationDestination(icon: Icon(Icons.chat), label: 'Chat'),
-            NavigationDestination(icon: Icon(Icons.person), label: 'Profile'),
+            NavigationDestination(icon: Icon(Icons.map), label: 'Map'),
+            NavigationDestination(icon: Icon(Icons.medication), label: 'Medicine'),
+
           ],
           onDestinationSelected: (value) {
             selectedPageNotifier.value = value;

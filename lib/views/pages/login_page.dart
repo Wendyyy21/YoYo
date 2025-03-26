@@ -58,7 +58,7 @@ class _LoginPageState extends State<LoginPage> {
         selectedPageNotifier.value = 0;
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (context) => youngWidgetTree()),
+          MaterialPageRoute(builder: (context) => YoungWidgetTree()),
           (route) => false,
         );
       }
