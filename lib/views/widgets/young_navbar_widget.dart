@@ -19,6 +19,7 @@ class _Young_NavBarState extends State<Young_NavBar> {
             NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
             NavigationDestination(icon: Icon(Icons.map), label: 'Map'),
             NavigationDestination(icon: Icon(Icons.medication), label: 'Medicine'),
+
           ],
           onDestinationSelected: (value) {
             selectedPageNotifier.value = value;

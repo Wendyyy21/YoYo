@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/data/constants.dart';
+import 'package:frontend/data/notifiers.dart';
+import 'package:frontend/views/elderly_widget_tree.dart';
 import 'package:frontend/views/young_widget_tree.dart';
-
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -15,11 +18,10 @@ class _LoginPageState extends State<LoginPage> {
   TextEditingController pwController = TextEditingController();
   bool _obscureText = true;
 
-  void validateInput(
+  Future<void> validateInput(
     TextEditingController usernameController,
     TextEditingController pwController,
-  ) {
-    //TODO: add checking of username and password with database
+  ) async {
     if (usernameController.text.trim().isEmpty ||
         pwController.text.trim().isEmpty) {
       ScaffoldMessenger.of(
@@ -27,15 +29,48 @@ class _LoginPageState extends State<LoginPage> {
       ).showSnackBar(SnackBar(content: Text('Please enter all details.')));
       return;
     }
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(
-        builder: (context) {
-          return YoungWidgetTree();
-        },
-      ),
-      (route) => false,
-    );
+
+    try {
+      UserCredential userCredential = await FirebaseAuth.instance
+          .signInWithEmailAndPassword(
+            email: usernameController.text.trim(), // Use username as email
+            password: pwController.text.trim(),
+          );
+
+      // Retrieve user role from Firestore
+      DocumentSnapshot userDoc =
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(userCredential.user!.uid)
+              .get();
+
+      String role = userDoc.get('role');
+
+      // Navigate based on role
+      if (role == 'elder') {
+        selectedPageNotifier.value = 0;
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => ElderlyWidgetTree()),
+          (route) => false,
+        );
+      } else {
+        selectedPageNotifier.value = 0;
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => YoungWidgetTree()),
+          (route) => false,
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to login: ${e.message}')));
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('An unexpected error occurred: $e')),
+      );
+    }
   }
 
   @override
@@ -70,7 +105,7 @@ class _LoginPageState extends State<LoginPage> {
                   child: TextField(
                     controller: usernameController,
                     decoration: const InputDecoration(
-                      hintText: 'Username',
+                      hintText: 'Email',
                       border: OutlineInputBorder(),
                     ),
                   ),
