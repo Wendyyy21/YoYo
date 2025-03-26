@@ -41,7 +41,11 @@ class _LoadingDotsState extends State<LoadingDots>
         String dots = '.' * dotAnimation.value;
         return Text(
           dots,
-          style: TextStyle(fontSize: 40.0, fontWeight: FontWeight.w900),
+          style: TextStyle(
+            fontSize: 40.0,
+            fontWeight: FontWeight.w900,
+            color: const Color.fromARGB(255, 111, 111, 111),
+          ),
         );
       },
     );

@@ -1,11 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/views/pages/changepw_page.dart';
 import 'package:frontend/views/pages/linkaccount_page.dart';
+import 'package:frontend/views/pages/viewfamily_page.dart';
 import 'package:frontend/views/pages/welcome_page.dart';
 
-class Elderly_ProfilePage extends StatelessWidget {
+class Elderly_ProfilePage extends StatefulWidget {
   const Elderly_ProfilePage({super.key});
-  final String username = 'Elderly'; //TODO: replace with actual username
-  final String id = 'isubfoufoua'; //TODO: replace with actual ID
+
+  @override
+  State<Elderly_ProfilePage> createState() => _Elderly_ProfilePageState();
+}
+
+class _Elderly_ProfilePageState extends State<Elderly_ProfilePage> {
+  TextEditingController usernameController = TextEditingController(
+    text: 'Grandma',
+  );
+  //TODO: replace with actual username
+  final String id = 'isubfoufoua';
+  //TODO: replace with actual ID
+
+  @override
+  void dispose() {
+    usernameController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +37,17 @@ class Elderly_ProfilePage extends StatelessWidget {
               radius: 100.0,
             ),
             SizedBox(height: 10.0),
-            Text(username, style: TextStyle(fontSize: 40.0)),
+            SizedBox(
+              width: 300.0,
+              child: TextField(
+                controller: usernameController,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(borderSide: BorderSide.none),
+                ),
+                style: TextStyle(fontSize: 40.0),
+                textAlign: TextAlign.center,
+              ),
+            ),
             SizedBox(height: 10.0),
             Text(
               'Account ID: $id',
@@ -30,8 +58,18 @@ class Elderly_ProfilePage extends StatelessWidget {
               child: ListView(
                 children: [
                   ListTile(
-                    title: Text('Edit profile'),
-                    leading: Icon(Icons.edit),
+                    title: Text('Change password'),
+                    leading: Icon(Icons.security),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) {
+                            return ChangePasswordPage();
+                          },
+                        ),
+                      );
+                    },
                   ),
                   ListTile(
                     title: Text('Link account'),
@@ -42,6 +80,20 @@ class Elderly_ProfilePage extends StatelessWidget {
                         MaterialPageRoute(
                           builder: (context) {
                             return LinkAccountPage();
+                          },
+                        ),
+                      );
+                    },
+                  ),
+                  ListTile(
+                    title: Text('View family'),
+                    leading: Icon(Icons.family_restroom),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) {
+                            return ViewFamilyPage();
                           },
                         ),
                       );
