@@ -11,10 +11,12 @@ class ViewFamilyPage extends StatefulWidget {
 
 class _ViewFamilyPageState extends State<ViewFamilyPage> {
   String? familyCode;
-  String? currentUserId;
   List<Map<String, dynamic>> members = [];
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  String? currentUserId;
+  bool _isLoading = true;
+  bool _noFamily = false;
 
   @override
   void initState() {
@@ -24,31 +26,36 @@ class _ViewFamilyPageState extends State<ViewFamilyPage> {
   }
 
   Future<void> _fetchFamilyData() async {
-    final user = _auth.currentUser;
-    if (user != null) {
-      final familyQuery =
-          await _firestore
-              .collection('family')
-              .where('member1', isEqualTo: user.uid)
-              .get();
+    try {
+      final user = _auth.currentUser;
+      if (user != null) {
+        final familyQuery =
+            await _firestore
+                .collection('family')
+                .where('member1', isEqualTo: user.uid)
+                .get();
 
-      if (familyQuery.docs.isNotEmpty) {
-        final familyDoc = familyQuery.docs.first;
-        familyCode = familyDoc.id;
+        if (familyQuery.docs.isNotEmpty) {
+          final familyDoc = familyQuery.docs.first;
+          familyCode = familyDoc.id;
 
-        final familyData = familyDoc.data();
-        members.clear(); // Clear existing member data
-        familyData.forEach((key, value) {
-          if (key.startsWith('member')) {
-            _fetchMemberDetails(value);
-          }
-        });
-      } else {
-        // Handle case where user is not in a family
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('You are not in a family.')),
-        );
+          final familyData = familyDoc.data();
+          members.clear();
+          familyData.forEach((key, value) {
+            if (key.startsWith('member')) {
+              _fetchMemberDetails(value);
+            }
+          });
+        } else {
+          _noFamily = true;
+        }
       }
+    } catch (e) {
+      print('Error fetching family data: $e');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -61,9 +68,8 @@ class _ViewFamilyPageState extends State<ViewFamilyPage> {
         setState(() {
           members.add({
             'uid': memberUid,
-            'name':
-                memberData['username'] ?? 'Unknown', // Corrected to 'username'
-            'role': memberData['role'] ?? 'young', // Corrected to 'role'
+            'name': memberData['username'] ?? 'Unknown',
+            'role': memberData['role'] ?? 'young',
           });
         });
       } else {
@@ -98,14 +104,7 @@ class _ViewFamilyPageState extends State<ViewFamilyPage> {
             await _firestore.collection('family').doc(familyCode).update({
               memberKeyToRemove: FieldValue.delete(),
             });
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('You have left the family.')),
-            );
-            Navigator.pop(context); // Go back to previous screen
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('You are not in this family.')),
-            );
+            Navigator.pop(context);
           }
         }
       } catch (e) {
@@ -123,55 +122,70 @@ class _ViewFamilyPageState extends State<ViewFamilyPage> {
         appBar: AppBar(
           title: const Text('View Family'),
           actions: [
-            IconButton(
-              icon: const Icon(Icons.exit_to_app),
-              onPressed: _leaveFamily,
-            ),
-          ],
-        ),
-        body: Column(
-          children: [
             if (familyCode != null)
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(
-                  'Family Code: $familyCode',
-                  style: const TextStyle(fontSize: 18),
-                ),
+              IconButton(
+                icon: const Icon(Icons.exit_to_app),
+                onPressed: _leaveFamily,
               ),
-            Expanded(
-              child: ListView.builder(
-                itemCount: members.length,
-                itemBuilder: (context, index) {
-                  final member = members[index];
-                  final isCurrentUser = member['uid'] == currentUserId;
-                  return ListTile(
-                    leading: CircleAvatar(
-                      foregroundImage: AssetImage(
-                        member['role'] ==
-                                'elder' // Corrected to 'elder'
-                            ? 'assets/images/elderly_avatar.png'
-                            : 'assets/images/young_avatar.png',
-                      ),
-                      radius: 30.0,
-                    ),
-                    title: Text(
-                      member['name'],
-                      style: TextStyle(
-                        fontSize: 20.0,
-                        fontWeight:
-                            isCurrentUser ? FontWeight.bold : FontWeight.normal,
-                        color: isCurrentUser ? Colors.blue : Colors.black,
-                      ),
-                    ),
-                    tileColor:
-                        isCurrentUser ? Colors.blue.withOpacity(0.1) : null,
-                  );
-                },
-              ),
-            ),
           ],
         ),
+        body:
+            _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _noFamily
+                ? const Center(
+                  child: Text(
+                    'You are not in a family.',
+                    style: TextStyle(fontSize: 18),
+                  ),
+                ) // Display no family message
+                : Column(
+                  children: [
+                    if (familyCode != null)
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          'Family Code: $familyCode',
+                          style: const TextStyle(fontSize: 18),
+                        ),
+                      ),
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: members.length,
+                        itemBuilder: (context, index) {
+                          final member = members[index];
+                          final isCurrentUser = member['uid'] == currentUserId;
+                          return ListTile(
+                            leading: CircleAvatar(
+                              foregroundImage: AssetImage(
+                                member['role'] == 'elder'
+                                    ? 'assets/images/elderly_avatar.png'
+                                    : 'assets/images/young_avatar.png',
+                              ),
+                              radius: 30.0,
+                            ),
+                            title: Text(
+                              member['name'],
+                              style: TextStyle(
+                                fontSize: 20.0,
+                                fontWeight:
+                                    isCurrentUser
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                color:
+                                    isCurrentUser ? Colors.blue : Colors.black,
+                              ),
+                            ),
+                            tileColor:
+                                isCurrentUser
+                                    ? Colors.blue.withOpacity(0.1)
+                                    : null,
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
       ),
     );
   }
