@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'dart:async';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 Future<Position> _getPosition() async {
   bool servicesEnabled;
@@ -15,7 +17,7 @@ Future<Position> _getPosition() async {
   permission = await Geolocator.checkPermission();
   if (permission == LocationPermission.denied) {
     permission = await Geolocator.requestPermission();
-    return Future.error('Locatation permissions are denied');
+    return Future.error('Location permissions are denied');
   }
 
   if (permission == LocationPermission.deniedForever) {
@@ -44,6 +46,25 @@ class _Young_mapState extends State<Young_MapPage> {
   Future<void> _updateMap() async {
     try {
       final position = await _getPosition();
+      try {
+        Position position = await _getPosition();
+        User? user = FirebaseAuth.instance.currentUser;
+
+        if (user != null) {
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .update({
+                'location': [position.latitude, position.longitude],
+                'lastUpdated': FieldValue.serverTimestamp(),
+              });
+          print('Location saved to Firestore for user: ${user.uid}');
+        } else {
+          print('User not logged in, impossible but sure why not');
+        }
+      } catch (e) {
+        print('Error saving location to Firestore: $e');
+      }
       setState(() {
         _elderlyLocation = LatLng(position.latitude, position.longitude);
         _locationText =
