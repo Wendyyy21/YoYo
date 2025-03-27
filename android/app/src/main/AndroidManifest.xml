@@ -2,7 +2,7 @@
     <application
         android:label="YoYo"
         android:name="${applicationName}"
-        android:icon="./YoYoAPP.png">
+        android:icon="@mipmap/yoyo_app">
         <activity
             android:name=".MainActivity"
             android:exported="true"
