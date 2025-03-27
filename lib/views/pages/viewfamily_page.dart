@@ -29,23 +29,13 @@ class _ViewFamilyPageState extends State<ViewFamilyPage> {
     try {
       final user = _auth.currentUser;
       if (user != null) {
-        final familyQuery =
-            await _firestore
-                .collection('family')
-                .where('member1', isEqualTo: user.uid)
-                .get();
-
-        if (familyQuery.docs.isNotEmpty) {
-          final familyDoc = familyQuery.docs.first;
-          familyCode = familyDoc.id;
-
-          final familyData = familyDoc.data();
-          members.clear();
-          familyData.forEach((key, value) {
-            if (key.startsWith('member')) {
-              _fetchMemberDetails(value);
-            }
-          });
+        // Query the user's document to get the familyCode
+        final userDoc =
+            await _firestore.collection('users').doc(user.uid).get();
+        if (userDoc.exists &&
+            userDoc.data()?.containsKey('familyCode') == true) {
+          familyCode = userDoc.data()!['familyCode'];
+          await _fetchFamilyMembers(familyCode!);
         } else {
           _noFamily = true;
         }
@@ -56,6 +46,26 @@ class _ViewFamilyPageState extends State<ViewFamilyPage> {
       setState(() {
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _fetchFamilyMembers(String familyCode) async {
+    try {
+      final familyDoc =
+          await _firestore.collection('family').doc(familyCode).get();
+      if (familyDoc.exists) {
+        final familyData = familyDoc.data();
+        members.clear();
+        familyData?.forEach((key, value) {
+          if (key.startsWith('member')) {
+            _fetchMemberDetails(value);
+          }
+        });
+      } else {
+        _noFamily = true;
+      }
+    } catch (e) {
+      print('Error fetching family members: $e');
     }
   }
 
@@ -103,6 +113,9 @@ class _ViewFamilyPageState extends State<ViewFamilyPage> {
           if (memberKeyToRemove.isNotEmpty) {
             await _firestore.collection('family').doc(familyCode).update({
               memberKeyToRemove: FieldValue.delete(),
+            });
+            await _firestore.collection('users').doc(user.uid).update({
+              'familyCode': FieldValue.delete(),
             });
             Navigator.pop(context);
           }

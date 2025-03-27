@@ -22,30 +22,41 @@ class _LinkAccountPageState extends State<LinkAccountPage> {
     Navigator.pop(context);
   }
 
-  String generateFamilyCode() {
+  Future<String> generateFamilyCode() async {
     const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
     final random = Random();
-    return String.fromCharCodes(
-      Iterable.generate(
-        6,
-        (_) => chars.codeUnitAt(random.nextInt(chars.length)),
-      ),
-    );
+    String familyCode;
+    bool codeExists;
+
+    do {
+      familyCode = String.fromCharCodes(
+        Iterable.generate(
+          6,
+          (_) => chars.codeUnitAt(random.nextInt(chars.length)),
+        ),
+      );
+
+      // Check if the code already exists in Firestore
+      final familyDoc =
+          await _firestore.collection('family').doc(familyCode).get();
+      codeExists = familyDoc.exists;
+    } while (codeExists); // Repeat until a unique code is found
+
+    return familyCode;
   }
 
   Future<void> createFamily() async {
     try {
       final user = _auth.currentUser;
       if (user != null) {
-        final familyCode = generateFamilyCode();
+        final familyCode =
+            await generateFamilyCode(); // Await the async function
         // Check if user is already in a family
         final userFamilyQuery =
-            await _firestore
-                .collection('family')
-                .where('member1', isEqualTo: user.uid)
-                .get();
+            await _firestore.collection('users').doc(user.uid).get();
 
-        if (userFamilyQuery.docs.isNotEmpty) {
+        if (userFamilyQuery.exists &&
+            userFamilyQuery.data()?.containsKey('familyCode') == true) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('User is already in a family.')),
           );
@@ -55,6 +66,11 @@ class _LinkAccountPageState extends State<LinkAccountPage> {
         await _firestore.collection('family').doc(familyCode).set({
           'member1': user.uid,
         });
+
+        await _firestore.collection('users').doc(user.uid).update({
+          'familyCode': familyCode,
+        });
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Family created with code: $familyCode')),
         );
@@ -94,12 +110,10 @@ class _LinkAccountPageState extends State<LinkAccountPage> {
           }
 
           final userFamilyQuery =
-              await _firestore
-                  .collection('family')
-                  .where('member1', isEqualTo: user.uid)
-                  .get();
+              await _firestore.collection('users').doc(user.uid).get();
 
-          if (userFamilyQuery.docs.isNotEmpty) {
+          if (userFamilyQuery.exists &&
+              userFamilyQuery.data()?.containsKey('familyCode') == true) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('User is already in a family.')),
             );
@@ -116,6 +130,10 @@ class _LinkAccountPageState extends State<LinkAccountPage> {
               .collection('family')
               .doc(famCodeController.text)
               .update({'member$memberCount': user.uid});
+
+          await _firestore.collection('users').doc(user.uid).update({
+            'familyCode': famCodeController.text,
+          });
 
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -158,7 +176,7 @@ class _LinkAccountPageState extends State<LinkAccountPage> {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
-        appBar: AppBar(title: Text('Link account')),
+        appBar: AppBar(title: const Text('Link account')),
         body: SingleChildScrollView(
           child: ConstrainedBox(
             constraints: BoxConstraints(
