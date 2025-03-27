@@ -3,9 +3,74 @@ import 'package:frontend/data/constants.dart';
 import 'package:frontend/data/notifiers.dart';
 import 'package:frontend/views/pages/elderly/game_page.dart';
 import 'package:lottie/lottie.dart';
+import 'package:flutter_background_geolocation/flutter_background_geolocation.dart' as bg;
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-class Elderly_HomePage extends StatelessWidget {
+class Elderly_HomePage extends StatefulWidget {
   const Elderly_HomePage({super.key});
+
+  @override
+  State<Elderly_HomePage> createState() => _Elderly_HomePageState();
+}
+
+class _Elderly_HomePageState extends State<Elderly_HomePage> {
+  @override
+  void initState() {
+    super.initState();
+    _configureBackgroundLocation();
+  }
+
+  Future<void> _configureBackgroundLocation() async {
+    bg.BackgroundGeolocation.ready(bg.Config(
+      desiredAccuracy: bg.Config.DESIRED_ACCURACY_HIGH,
+      distanceFilter: 10,
+      stopOnTerminate: false,
+      startOnBoot: true,
+      debug: true,
+      logLevel: bg.Config.LOG_LEVEL_VERBOSE,
+      forceReloadOnLocationChange: true,
+      forceReloadOnMotionChange: true,
+      forceReloadOnGeofence: false,
+      stopTimeout: 1,
+      locationAuthorizationAlert: {
+        'titleWhenNotEnabled': "Location services are not enabled",
+        'instructions': "You must enable 'Always' in location services",
+        'cancelButton': "Cancel",
+        'settingsButton': "Settings"
+      }
+    )).then((bg.State state) {
+      if (!state.enabled) {
+        bg.BackgroundGeolocation.start();
+      }
+    });
+
+    bg.BackgroundGeolocation.onLocation((bg.Location location) {
+      _saveLocationToFirestore(location);
+    });
+
+    bg.BackgroundGeolocation.requestPermission();
+  }
+
+  Future<void> _saveLocationToFirestore(bg.Location location) async {
+    try {
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .update({
+          'location': [location.coords.latitude, location.coords.longitude],
+          'lastUpdated': FieldValue.serverTimestamp(),
+        });
+        print('Location saved to Firestore for user: ${user.uid}');
+      } else {
+        print('User not logged in.');
+      }
+    } catch (e) {
+      print('Error saving location: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

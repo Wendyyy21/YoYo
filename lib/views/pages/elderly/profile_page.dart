@@ -3,6 +3,9 @@ import 'package:frontend/views/pages/changepw_page.dart';
 import 'package:frontend/views/pages/linkaccount_page.dart';
 import 'package:frontend/views/pages/viewfamily_page.dart';
 import 'package:frontend/views/pages/welcome_page.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/services.dart';
 
 class Elderly_ProfilePage extends StatefulWidget {
   const Elderly_ProfilePage({super.key});
@@ -12,102 +15,149 @@ class Elderly_ProfilePage extends StatefulWidget {
 }
 
 class _Elderly_ProfilePageState extends State<Elderly_ProfilePage> {
-  TextEditingController usernameController = TextEditingController(
-    text: 'Grandma',
-  );
-  //TODO: replace with actual username
-  final String id = 'isubfoufoua';
-  //TODO: replace with actual ID
+  String userId = '';
+  String username = 'Loading...';
+  String userRole = 'young';
 
   @override
-  void dispose() {
-    usernameController.dispose();
-    super.dispose();
+  void initState() {
+    super.initState();
+    _fetchUserData();
+  }
+
+  Future<void> _fetchUserData() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        userId = user.uid;
+        final userDoc =
+            await FirebaseFirestore.instance
+                .collection('users')
+                .doc(userId)
+                .get();
+        if (userDoc.exists) {
+          setState(() {
+            username = userDoc.data()?['username'] ?? 'Username not found';
+            userRole = userDoc.data()?['role'] ?? 'young';
+          });
+        } else {
+          setState(() {
+            username = 'User data not found';
+          });
+        }
+      } else {
+        setState(() {
+          username = 'User not logged in';
+        });
+      }
+    } catch (e) {
+      print('Error fetching user data: $e');
+      setState(() {
+        username = 'Error loading username';
+      });
+    }
+  }
+
+  Future<void> _copyUserId() async {
+    await Clipboard.setData(ClipboardData(text: userId));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Account ID copied to clipboard')),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Profile')),
+      appBar: AppBar(title: const Text('Profile')),
       body: Center(
         child: Column(
           children: [
             CircleAvatar(
-              foregroundImage: AssetImage('assets/images/elderly_avatar.png'),
+              foregroundImage: AssetImage(
+                userRole == 'elder'
+                    ? 'assets/images/elderly_avatar.png'
+                    : 'assets/images/young_avatar.png',
+              ),
               radius: 100.0,
             ),
-            SizedBox(height: 10.0),
-            SizedBox(
-              width: 300.0,
-              child: TextField(
-                controller: usernameController,
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(borderSide: BorderSide.none),
-                ),
-                style: TextStyle(fontSize: 40.0),
-                textAlign: TextAlign.center,
-              ),
-            ),
-            SizedBox(height: 10.0),
+            const SizedBox(height: 10.0),
             Text(
-              'Account ID: $id',
-              style: TextStyle(fontSize: 20.0, fontStyle: FontStyle.italic),
+              username,
+              style: const TextStyle(fontSize: 40.0),
+              textAlign: TextAlign.center,
             ),
-            SizedBox(height: 10.0),
+            const SizedBox(height: 10.0),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'Account ID:',
+                  style: const TextStyle(
+                    fontSize: 20.0,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.copy),
+                  onPressed: _copyUserId,
+                ),
+              ],
+            ),
+            const SizedBox(height: 10.0),
             Expanded(
               child: ListView(
                 children: [
                   ListTile(
-                    title: Text('Change password'),
-                    leading: Icon(Icons.security),
+                    title: const Text('Change password'),
+                    leading: const Icon(Icons.security),
                     onTap: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) {
-                            return ChangePasswordPage();
+                            return const ChangePasswordPage();
                           },
                         ),
                       );
                     },
                   ),
                   ListTile(
-                    title: Text('Link account'),
-                    leading: Icon(Icons.link),
+                    title: const Text('Link account'),
+                    leading: const Icon(Icons.link),
                     onTap: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) {
-                            return LinkAccountPage();
+                            return const LinkAccountPage();
                           },
                         ),
                       );
                     },
                   ),
                   ListTile(
-                    title: Text('View family'),
-                    leading: Icon(Icons.family_restroom),
+                    title: const Text('View family'),
+                    leading: const Icon(Icons.family_restroom),
                     onTap: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) {
-                            return ViewFamilyPage();
+                            return const ViewFamilyPage();
                           },
                         ),
                       );
                     },
                   ),
                   ListTile(
-                    title: Text('Log out'),
-                    leading: Icon(Icons.logout),
+                    title: const Text('Log out'),
+                    leading: const Icon(Icons.logout),
                     onTap: () {
                       Navigator.pushAndRemoveUntil(
                         context,
                         MaterialPageRoute(
                           builder: (context) {
-                            return WelcomePage();
+                            return const WelcomePage();
                           },
                         ),
                         (route) => false,

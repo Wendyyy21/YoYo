@@ -1,144 +1,195 @@
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
-import 'dart:async';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
-Future<Position> _getPosition() async {
-  bool servicesEnabled;
-  LocationPermission permission;
-
-  servicesEnabled = await Geolocator.isLocationServiceEnabled();
-  if (!servicesEnabled) {
-    return Future.error('Location services are disabled.');
-  } 
-
-  permission = await Geolocator.checkPermission();
-  if (permission == LocationPermission.denied) {
-    permission = await Geolocator.requestPermission();
-    return Future.error('Location permissions are denied');
-  }
-
-  if (permission == LocationPermission.deniedForever) {
-    return Future.error('Location permissions are permanently denied');
-  }
-
-  print('Happyyyyyyy');
-
-  return await Geolocator.getCurrentPosition();
-}
+import 'package:frontend/data/constants.dart';
 
 class Young_MapPage extends StatefulWidget {
   const Young_MapPage({super.key});
 
   @override
-  State<Young_MapPage> createState() => _Young_mapState();
+  State<Young_MapPage> createState() => _YoungMapState();
 }
 
-class _Young_mapState extends State<Young_MapPage> {
-  final Completer<GoogleMapController> _controller =
-      Completer<GoogleMapController>();
-  LatLng? _elderlyLocation;
-  String _locationText = 'Elderly Location: Unknown';
-  Set<Marker> _markers = {};
-
-  Future<void> _updateMap() async {
-    try {
-      final position = await _getPosition();
-      try {
-        Position position = await _getPosition();
-        User? user = FirebaseAuth.instance.currentUser;
-
-        if (user != null) {
-          await FirebaseFirestore.instance
-              .collection('users')
-              .doc(user.uid)
-              .update({
-                'location': [position.latitude, position.longitude],
-                'lastUpdated': FieldValue.serverTimestamp(),
-              });
-          print('Location saved to Firestore for user: ${user.uid}');
-        } else {
-          print('User not logged in, impossible but sure why not');
-        }
-      } catch (e) {
-        print('Error saving location to Firestore: $e');
-      }
-      setState(() {
-        _elderlyLocation = LatLng(position.latitude, position.longitude);
-        _locationText =
-            'Elderly Location: Latitude: ${position.latitude}, Longitude: ${position.longitude}';
-        _markers = {
-          Marker(
-            markerId: const MarkerId('elderlyLocation'),
-            position: _elderlyLocation!,
-            infoWindow: const InfoWindow(title: 'Elderly Location'),
-          ),
-        };
-      });
-
-      final GoogleMapController controller = await _controller.future;
-      controller.animateCamera(CameraUpdate.newCameraPosition(
-        CameraPosition(target: _elderlyLocation!, zoom: 15),
-      ));
-    } catch (e) {
-      setState(() {
-        _locationText = 'Error: $e';
-      });
-      print('Error getting location: $e');
-    }
-  }
+class _YoungMapState extends State<Young_MapPage> {
+  String? _selectedElderly;
+  final List<String> _elderlyList = [
+    "Grandma (Alice)",
+    "Grandpa (Bob)",
+    "Uncle Charlie",
+    "Aunt Daisy",
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Track Your Elderly'),
+        title: const Text('Find Your Elderly',
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          color:Colors.black,
+          ),
+        ),
+        centerTitle: true,
+        backgroundColor:Colors.transparent,
+        elevation: 0,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0), // Removed top padding
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Expanded(
-              child: _elderlyLocation != null
-                  ? GoogleMap(
-                      mapType: MapType.normal,
-                      initialCameraPosition: CameraPosition(
-                        target: _elderlyLocation!,
-                        zoom: 15,
-                      ),
-                      onMapCreated: (GoogleMapController controller) {
-                        _controller.complete(controller);
-                      },
-                      markers: _markers,
-                    )
-                  : Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const Center(
-                        child: Text(
-                          'Google Map Placeholder',
-                          style: TextStyle(color: Colors.grey),
+            const SizedBox(height: 8), // Reduced from 20
+            // Map Placeholder Card
+            Card(
+              elevation: 5,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Container(
+                height: 200,
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.map, size: 50, color: AppColors.titleGreen),
+                      const SizedBox(height: 10),
+                      Text(
+                        'Google Map will appear here',
+                        style: TextStyle(
+                          color: Colors.grey[700],
+                          fontSize: 16,
                         ),
                       ),
-                    ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              _locationText,
-              style: const TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _updateMap,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
+                    ],
+                  ),
+                ),
               ),
-              child: const Text('Start Tracking'),
+            ),
+            const SizedBox(height: 20),
+
+            // Elderly Selection Card
+            Card(
+              elevation: 3,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Select Elderly to Find",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey[800],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      value: _selectedElderly,
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                      ),
+                      hint: const Text("Choose an elderly"),
+                      items: _elderlyList.map((elderly) {
+                        return DropdownMenuItem(
+                          value: elderly,
+                          child: Text(elderly),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedElderly = value;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Location Status Card
+            Card(
+              elevation: 3,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.location_on,
+                      color: AppColors.titleGreen,
+                      size: 28,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Current Status:",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey[800],
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            _selectedElderly != null
+                                ? "Finding ${_selectedElderly}"
+                                : "No elderly selected",
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Tracking Button
+            ElevatedButton(
+              onPressed: _selectedElderly != null
+                  ? () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text("Finding ${_selectedElderly}..."),
+                        ),
+                      );
+                    }
+                  : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.titleGreen,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                'Start Finding',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16
+                ),
+              ),
             ),
           ],
         ),
