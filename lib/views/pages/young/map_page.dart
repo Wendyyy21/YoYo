@@ -3,6 +3,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:frontend/data/constants.dart';
+import 'dart:async';
 
 class Young_MapPage extends StatefulWidget {
   const Young_MapPage({super.key});
@@ -13,12 +14,92 @@ class Young_MapPage extends StatefulWidget {
 
 class _YoungMapState extends State<Young_MapPage> {
   String? _selectedElderly;
-  final List<String> _elderlyList = [
-    "Grandma (Alice)",
-    "Grandpa (Bob)",
-    "Uncle Charlie",
-    "Aunt Daisy",
-  ];
+  List<String> _elderlyList = [];
+  LatLng? _elderlyLocation;
+  final Completer<GoogleMapController> _controller = Completer();
+  Set<Marker> _markers = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchElders();
+  }
+
+  Future<void> _fetchElders() async {
+    try {
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
+
+      DocumentSnapshot userSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      String familyCode = userSnapshot['familyCode'];
+
+      DocumentSnapshot familySnapshot = await FirebaseFirestore.instance
+          .collection('family')
+          .doc(familyCode)
+          .get();
+
+      List<String> memberIds = [];
+      Map<String, dynamic>? familyData = familySnapshot.data() as Map<String, dynamic>?;
+
+      if (familyData != null) {
+        familyData.forEach((key, value) {
+          if (key.startsWith('member') && value is String) {
+            memberIds.add(value);
+          }
+        });
+      }
+
+      List<String> elders = [];
+      for (String memberId in memberIds) {
+        DocumentSnapshot memberSnapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(memberId)
+            .get();
+        if (memberSnapshot['role'] == 'elder') {
+          elders.add(memberSnapshot['username']);
+        }
+      }
+
+      setState(() {
+        _elderlyList = elders;
+      });
+    } catch (e) {
+      print('Error fetching elders: $e');
+    }
+  }
+
+  Future<void> _fetchElderLocation(String elderName) async {
+    try {
+      DocumentSnapshot elderSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .where('username', isEqualTo: elderName)
+          .get()
+          .then((querySnapshot) => querySnapshot.docs.first);
+
+      List<dynamic> location = elderSnapshot['location'];
+      LatLng latLng = LatLng(location[0], location[1]);
+
+      setState(() {
+        _elderlyLocation = latLng;
+        _markers = {
+          Marker(
+            markerId: MarkerId(elderName),
+            position: latLng,
+            infoWindow: InfoWindow(title: elderName),
+          ),
+        };
+      });
+    } catch (e) {
+      print('Error fetching elder location: $e');
+      setState(() {
+        _elderlyLocation = null;
+        _markers = {};
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,44 +116,55 @@ class _YoungMapState extends State<Young_MapPage> {
         elevation: 0,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0), // Removed top padding
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const SizedBox(height: 8), // Reduced from 20
-            // Map Placeholder Card
+            const SizedBox(height: 8),
+            // Map Placeholder Card or Google Map
             Card(
               elevation: 5,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Container(
+              child: SizedBox(
                 height: 200,
-                decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.map, size: 50, color: AppColors.titleGreen),
-                      const SizedBox(height: 10),
-                      Text(
-                        'Google Map will appear here',
-                        style: TextStyle(
-                          color: Colors.grey[700],
-                          fontSize: 16,
+                child: _elderlyLocation != null
+                    ? GoogleMap(
+                        mapType: MapType.normal,
+                        initialCameraPosition: CameraPosition(
+                          target: _elderlyLocation!,
+                          zoom: 15,
+                        ),
+                        onMapCreated: (GoogleMapController controller) {
+                          _controller.complete(controller);
+                        },
+                        markers: _markers,
+                      )
+                    : Container(
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.map,
+                                  size: 50, color: AppColors.titleGreen),
+                              const SizedBox(height: 10),
+                              Text(
+                                'Google Map will appear here',
+                                style: TextStyle(
+                                    color: Colors.grey[700], fontSize: 16),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ],
-                  ),
-                ),
               ),
             ),
             const SizedBox(height: 20),
-
-            // Elderly Selection Card
             Card(
               elevation: 3,
               shape: RoundedRectangleBorder(
@@ -111,6 +203,7 @@ class _YoungMapState extends State<Young_MapPage> {
                       onChanged: (value) {
                         setState(() {
                           _selectedElderly = value;
+                          _fetchElderLocation(value!);
                         });
                       },
                     ),
@@ -119,8 +212,6 @@ class _YoungMapState extends State<Young_MapPage> {
               ),
             ),
             const SizedBox(height: 20),
-
-            // Location Status Card
             Card(
               elevation: 3,
               shape: RoundedRectangleBorder(
@@ -164,8 +255,6 @@ class _YoungMapState extends State<Young_MapPage> {
               ),
             ),
             const SizedBox(height: 24),
-
-            // Tracking Button
             ElevatedButton(
               onPressed: _selectedElderly != null
                   ? () {
@@ -184,7 +273,7 @@ class _YoungMapState extends State<Young_MapPage> {
                 ),
               ),
               child: const Text(
-                'Start Finding',
+                'Find',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 16
