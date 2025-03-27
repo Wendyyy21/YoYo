@@ -91,7 +91,7 @@ class _Elderly_ProfilePageState extends State<Elderly_ProfilePage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  'Account ID: $userId',
+                  'Account ID:',
                   style: const TextStyle(
                     fontSize: 20.0,
                     fontStyle: FontStyle.italic,
