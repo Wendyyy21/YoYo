@@ -1,32 +1,55 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/data/constants.dart';
 import 'dart:math';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:async';
 
-class MedicineDosage {
+class Dosage {
   final TimeOfDay time;
   final int quantity;
 
-  MedicineDosage({required this.time, required this.quantity});
+  Dosage({required this.time, required this.quantity});
+
+  Map<String, dynamic> toMap() {
+    return {
+      'time': {
+        'hour': time.hour,
+        'minute': time.minute,
+      },
+      'quantity': quantity,
+    };
+  }
 }
 
 class Medicine {
-  String id;
-  String name;
-  String mealTime;
-  List<MedicineDosage> dosages;
-  String note;
-  String? elderlyName;
-  List<String> frequency;
-
+  final String id;
+  final String name;
+  final String mealTime;
+  final List<String> frequency;
+  final List<Dosage> dosages;
+  final String note;
+  final String? elderlyName;
   Medicine({
     required this.id,
     required this.name,
     required this.mealTime,
-    this.dosages = const [],
-    this.note = '',
+    required this.frequency,
+    required this.dosages,
+    required this.note,
     this.elderlyName,
-    this.frequency = const [],
   });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'name': name,
+      'mealTime': mealTime,
+      'frequency': frequency,
+      'dosages': dosages.map((dosage) => dosage.toMap()).toList(),
+      'note': note,
+      'elderlyName': elderlyName, // Added elderlyName
+    };
+  }
 }
 
 class Young_MedicinePage extends StatefulWidget {
@@ -40,16 +63,127 @@ class _YoungMedicinePageState extends State<Young_MedicinePage> {
   final TextEditingController _medicineNameController = TextEditingController();
   final TextEditingController _noteController = TextEditingController();
   String _mealTime = 'Before Meal';
-  List<MedicineDosage> _dosages = [];
+  List<Dosage> _dosages = [];
   List<String> _selectedFrequency = [];
-
-  final List<String> _elderlyList = [
-    "Grandma (Alice)",
-    "Grandpa (Bob)",
-    "Uncle Charlie",
-    "Aunt Daisy",
-  ];
   String? _selectedElderly;
+  List<String> _elderlyList = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchElders();
+    _fetchMedicines();
+  }
+
+  Future<void> _fetchElders() async {
+    try {
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
+
+      DocumentSnapshot userSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      String familyCode = userSnapshot['familyCode'];
+
+      DocumentSnapshot familySnapshot = await FirebaseFirestore.instance
+          .collection('family')
+          .doc(familyCode)
+          .get();
+
+      List<String> memberIds = [];
+      Map<String, dynamic>? familyData = familySnapshot.data() as Map<String, dynamic>?;
+
+      if (familyData != null) {
+        familyData.forEach((key, value) {
+          if (key.startsWith('member') && value is String) {
+            memberIds.add(value);
+          }
+        });
+      }
+
+      List<String> elders = [];
+      for (String memberId in memberIds) {
+        DocumentSnapshot memberSnapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(memberId)
+            .get();
+        if (memberSnapshot['role'] == 'elder') {
+          elders.add(memberSnapshot['username']);
+        }
+      }
+
+      setState(() {
+        _elderlyList = elders;
+      });
+    } catch (e) {
+      print('Error fetching elders: $e');
+    }
+  }
+  
+  Future<void> _fetchMedicines() async {
+    try {
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
+
+      DocumentSnapshot userSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      String familyCode = userSnapshot['familyCode'];
+
+      DocumentSnapshot familySnapshot = await FirebaseFirestore.instance
+          .collection('family')
+          .doc(familyCode)
+          .get();
+
+      List<String> memberIds = [];
+      Map<String, dynamic>? familyData = familySnapshot.data() as Map<String, dynamic>?;
+
+      if (familyData != null) {
+        familyData.forEach((key, value) {
+          if (key.startsWith('member') && value is String) {
+            memberIds.add(value);
+          }
+        });
+      }
+
+      List<Medicine> allMedicines = [];
+
+      for (String memberId in memberIds) {
+        QuerySnapshot medicinesSnapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(memberId)
+            .collection('medicines')
+            .get();
+
+        for (var doc in medicinesSnapshot.docs) {
+          Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+          List<dynamic> dosagesData = data['dosages'] ?? [];
+          List<Dosage> dosages = dosagesData.map((d) => Dosage(
+                time: TimeOfDay(hour: d['time']['hour'], minute: d['time']['minute']),
+                quantity: d['quantity'],
+              )).toList();
+
+          allMedicines.add(Medicine(
+            id: doc.id,
+            name: data['name'],
+            mealTime: data['mealTime'],
+            dosages: dosages,
+            note: data['note'],
+            elderlyName: data['elderlyName'],
+            frequency: List<String>.from(data['frequency'] ?? []),
+          ));
+        }
+      }
+
+      setState(() {
+        _medicines = allMedicines;
+      });
+    } catch (e) {
+      print('Error fetching medicines: $e');
+    }
+  }
 
   List<Medicine> _medicines = [];
   Medicine? _editingMedicine;
@@ -139,52 +273,76 @@ class _YoungMedicinePageState extends State<Young_MedicinePage> {
 
     if (quantity != null) {
       setState(() {
-        _dosages.add(MedicineDosage(time: pickedTime, quantity: quantity));
+        _dosages.add(Dosage(time: pickedTime, quantity: quantity));
       });
     }
   }
 }
 
-  void _saveMedicine() {
-    if (_medicineNameController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter medicine name')),
-      );
-      return;
-    }
-
+  Future<void> _saveMedicine() async {
     if (_selectedElderly == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select an elderly person')),
+        const SnackBar(content: Text('Please select an elderly.')),
       );
       return;
     }
 
-    final newMedicine = Medicine(
-      id: _editingMedicine?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
-      name: _medicineNameController.text,
-      mealTime: _mealTime,
-      dosages: List.from(_dosages),
-      note: _noteController.text,
-      elderlyName: _selectedElderly,
-      frequency: _selectedFrequency,
-    );
+    try {
+      final QuerySnapshot userIdQuery = await FirebaseFirestore.instance
+          .collection('users')
+          .where('username', isEqualTo: _selectedElderly)
+          .get();
 
-    setState(() {
-      if (_isEditing) {
-        final index = _medicines.indexWhere((m) => m.id == _editingMedicine!.id);
-        if (index != -1) {
-          _medicines[index] = newMedicine;
-        }
-      } else {
-        _medicines.add(newMedicine);
+      if (userIdQuery.docs.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Elderly user not found')),
+        );
+        return;
       }
 
-      _resetForm();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_isEditing ? 'Medicine updated' : 'Medicine added')),
+      final String elderUserId = userIdQuery.docs.first.id;
+
+      final medicine = Medicine(
+        id: _isEditing ? _editingMedicine!.id : DateTime.now().toString(),
+        name: _medicineNameController.text,
+        mealTime: _mealTime,
+        frequency: List.from(_selectedFrequency),
+        dosages: _dosages,
+        note: _noteController.text,
+        elderlyName: _selectedElderly,
       );
-    });
+
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(elderUserId)
+          .collection('medicines')
+          .doc(medicine.id)
+          .set(medicine.toMap());
+
+      setState(() {
+        if (_isEditing) {
+          final index = _medicines.indexWhere((m) => m.id == medicine.id);
+          if (index != -1) {
+            _medicines[index] = medicine;
+          }
+        } else {
+          _medicines.add(medicine);
+        }
+        _resetForm();
+        _isFormExpanded = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_isEditing ? 'Medicine updated.' : 'Medicine added.')),
+      );
+    } catch (e) {
+      print('Error saving medicine: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to save medicine.')),
+      );
+    }
+
+    _fetchMedicines();
   }
 
   void _editMedicine(Medicine medicine) {
@@ -201,7 +359,7 @@ class _YoungMedicinePageState extends State<Young_MedicinePage> {
     });
   }
 
-  void _deleteMedicine(String id) {
+  void _deleteMedicine(String id) async {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -213,23 +371,81 @@ class _YoungMedicinePageState extends State<Young_MedicinePage> {
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () {
-              setState(() {
-                _medicines.removeWhere((m) => m.id == id);
-                if (_editingMedicine?.id == id) {
-                  _resetForm();
+            onPressed: () async { 
+              try {
+                User? user = FirebaseAuth.instance.currentUser;
+                if (user == null) return;
+
+                DocumentSnapshot userSnapshot = await FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(user.uid)
+                    .get();
+                String familyCode = userSnapshot['familyCode'];
+
+                DocumentSnapshot familySnapshot = await FirebaseFirestore.instance
+                    .collection('family')
+                    .doc(familyCode)
+                    .get();
+
+                List<String> memberIds = [];
+                Map<String, dynamic>? familyData = familySnapshot.data() as Map<String, dynamic>?;
+
+                if (familyData != null) {
+                  familyData.forEach((key, value) {
+                    if (key.startsWith('member') && value is String) {
+                      memberIds.add(value);
+                    }
+                  });
                 }
-              });
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Medicine deleted')),
-              );
+                for (String memberId in memberIds) {
+                  QuerySnapshot medicineSnapshot = await FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(memberId)
+                      .collection('medicines')
+                      .where('id', isEqualTo: id)
+                      .get();
+                  // print(id);
+                  print('Deleting medicine with ID: $id');
+                  print('memberID: $memberId');
+                  if (medicineSnapshot.docs.isNotEmpty) {
+                    for(var doc in medicineSnapshot.docs){
+                        print('Found document ID: ${doc.id}');
+                    }
+                    await FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(memberId)
+                        .collection('medicines')
+                        .doc(id)
+                        .delete();
+                    break;
+                  }
+                }
+
+                setState(() {
+                  _medicines.removeWhere((m) => m.id == id);
+                  if (_editingMedicine?.id == id) {
+                    _resetForm();
+                  }
+                });
+
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Medicine deleted')),
+                );
+              } catch (e) {
+                print('Error deleting medicine: $e');
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Failed to delete medicine')),
+                );
+              }
             },
             child: const Text('Delete'),
           ),
         ],
       ),
-    );
+    ).then((_) {
+      _fetchMedicines(); // reload
+    });
   }
 
   void _resetForm() {
@@ -259,7 +475,7 @@ class _YoungMedicinePageState extends State<Young_MedicinePage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Consume Frequency',
+          'What day should this medication be consumed?',
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 10),
@@ -310,7 +526,7 @@ class _YoungMedicinePageState extends State<Young_MedicinePage> {
       ),
       body: Column(
         children: [
-          // Form Section
+          //form Section
           AnimatedContainer(
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeInOut,
