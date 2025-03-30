@@ -17,6 +17,12 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _obscureText1 = true;
   TextEditingController pwController2 = TextEditingController();
   bool _obscureText2 = true;
+  
+  // Add focus nodes
+  FocusNode emailFocusNode = FocusNode();
+  FocusNode usernameFocusNode = FocusNode();
+  FocusNode password1FocusNode = FocusNode();
+  FocusNode password2FocusNode = FocusNode();
 
   Future<void> _register() async {
     if (pwController1.text != pwController2.text) {
@@ -35,12 +41,11 @@ class _RegisterPageState extends State<RegisterPage> {
       final result = await Navigator.push(
         context,
         MaterialPageRoute(
-          builder:
-              (context) => AccountTypePage(
-                email: emailController.text.trim(),
-                password: pwController1.text.trim(),
-                username: usernameController.text.trim(),
-              ),
+          builder: (context) => AccountTypePage(
+            email: emailController.text.trim(),
+            password: pwController1.text.trim(),
+            username: usernameController.text.trim(),
+          ),
         ),
       );
 
@@ -62,9 +67,14 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   void dispose() {
     usernameController.dispose();
-    emailController.dispose(); //dispose email controller
+    emailController.dispose();
     pwController1.dispose();
     pwController2.dispose();
+    // Dispose focus nodes
+    emailFocusNode.dispose();
+    usernameFocusNode.dispose();
+    password1FocusNode.dispose();
+    password2FocusNode.dispose();
     super.dispose();
   }
 
@@ -95,10 +105,15 @@ class _RegisterPageState extends State<RegisterPage> {
                     width: 350.0,
                     child: TextField(
                       controller: emailController,
+                      focusNode: emailFocusNode,
                       decoration: InputDecoration(
                         hintText: 'Email',
                         border: OutlineInputBorder(),
                       ),
+                      textInputAction: TextInputAction.next,
+                      onSubmitted: (_) {
+                        FocusScope.of(context).requestFocus(usernameFocusNode);
+                      },
                     ),
                   ),
                   const SizedBox(height: 10.0),
@@ -106,10 +121,15 @@ class _RegisterPageState extends State<RegisterPage> {
                     width: 350.0,
                     child: TextField(
                       controller: usernameController,
+                      focusNode: usernameFocusNode,
                       decoration: InputDecoration(
                         hintText: 'Username',
                         border: OutlineInputBorder(),
                       ),
+                      textInputAction: TextInputAction.next,
+                      onSubmitted: (_) {
+                        FocusScope.of(context).requestFocus(password1FocusNode);
+                      },
                     ),
                   ),
                   const SizedBox(height: 10.0),
@@ -117,6 +137,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     width: 350.0,
                     child: TextField(
                       controller: pwController1,
+                      focusNode: password1FocusNode,
                       obscureText: _obscureText1,
                       decoration: InputDecoration(
                         hintText: 'Password',
@@ -134,6 +155,10 @@ class _RegisterPageState extends State<RegisterPage> {
                           ),
                         ),
                       ),
+                      textInputAction: TextInputAction.next,
+                      onSubmitted: (_) {
+                        FocusScope.of(context).requestFocus(password2FocusNode);
+                      },
                     ),
                   ),
                   const SizedBox(height: 10.0),
@@ -141,6 +166,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     width: 350.0,
                     child: TextField(
                       controller: pwController2,
+                      focusNode: password2FocusNode,
                       obscureText: _obscureText2,
                       decoration: InputDecoration(
                         hintText: 'Re-enter password',
@@ -158,6 +184,10 @@ class _RegisterPageState extends State<RegisterPage> {
                           ),
                         ),
                       ),
+                      textInputAction: TextInputAction.go,
+                      onSubmitted: (_) {
+                        _register();
+                      },
                     ),
                   ),
                   const SizedBox(height: 20.0),
@@ -167,7 +197,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       fixedSize: Size(250.0, 50.0),
                       side: BorderSide(color: AppColors.buttonTeal, width: 1.5),
                     ),
-                    onPressed: _register, // Call _register directly
+                    onPressed: _register,
                     child: const Text('Next', style: TextStyle(fontSize: 20.0)),
                   ),
                   const SizedBox(height: 160.0),

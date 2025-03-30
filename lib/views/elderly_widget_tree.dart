@@ -36,18 +36,21 @@ class _ElderlyWidgetTreeState extends State<ElderlyWidgetTree> {
             ),
           ),
           actions: [
-            IconButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) {
-                      return Elderly_ProfilePage();
-                    },
-                  ),
-                );
-              },
-              icon: Icon(Icons.person),
+            Padding(
+              padding: EdgeInsets.only(right: 7.0), // Adjust value as needed
+              child: IconButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) {
+                        return Elderly_ProfilePage();
+                      },
+                    ),
+                  );
+                },
+                icon: Icon(Icons.person, size: 30.0),
+              ),
             ),
           ],
         ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/data/constants.dart';
+import 'package:frontend/views/pages/young/medicine_input_page.dart';
 import 'package:lottie/lottie.dart';
 
 class Young_HomePage extends StatelessWidget {
@@ -61,41 +62,52 @@ class Young_HomePage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 10.0),
-                const Card(
-                  elevation: 10.0,
-                  color: Color.fromARGB(255, 250, 246, 193),
-                  child: Padding(
-                    padding: EdgeInsets.all(20.0),
-                    child: Column(
-                      children: [
-                        Align(
-                          alignment: Alignment.topLeft,
-                          child: Text(
-                            'Medication reminder',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 26.0,
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const Young_MedicinePage(),
+                      ),
+                    );
+                  },
+                  child: const Card(
+                    elevation: 10.0,
+                    color: Color.fromARGB(255, 250, 246, 193),
+                    child: Padding(
+                      padding: EdgeInsets.all(20.0),
+                      child: Column(
+                        children: [
+                          Align(
+                            alignment: Alignment.topLeft,
+                            child: Text(
+                              'Medication reminder',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 26.0,
+                              ),
                             ),
                           ),
-                        ),
-                        SizedBox(height: 20.0),
-                        Row(
-                          children: [
-                            Icon(Icons.create, size: 50.0),
-                            SizedBox(width: 20.0),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Create New',
-                                  style: TextStyle(
-                                    fontSize: 30.0),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ],
+                          SizedBox(height: 20.0),
+                          Row(
+                            children: [
+                              Icon(Icons.create, size: 50.0),
+                              SizedBox(width: 20.0),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Create New',
+                                    style: TextStyle(
+                                      fontSize: 30.0,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),

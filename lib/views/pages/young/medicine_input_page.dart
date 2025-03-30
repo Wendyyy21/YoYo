@@ -30,6 +30,7 @@ class Medicine {
   final List<Dosage> dosages;
   final String note;
   final String? elderlyName;
+
   Medicine({
     required this.id,
     required this.name,
@@ -47,7 +48,7 @@ class Medicine {
       'frequency': frequency,
       'dosages': dosages.map((dosage) => dosage.toMap()).toList(),
       'note': note,
-      'elderlyName': elderlyName, // Added elderlyName
+      'elderlyName': elderlyName,
     };
   }
 }
@@ -67,6 +68,10 @@ class _YoungMedicinePageState extends State<Young_MedicinePage> {
   List<String> _selectedFrequency = [];
   String? _selectedElderly;
   List<String> _elderlyList = [];
+  List<Medicine> _medicines = [];
+  Medicine? _editingMedicine;
+  bool _isEditing = false;
+  bool _isFormExpanded = false;
 
   @override
   void initState() {
@@ -185,99 +190,94 @@ class _YoungMedicinePageState extends State<Young_MedicinePage> {
     }
   }
 
-  List<Medicine> _medicines = [];
-  Medicine? _editingMedicine;
-  bool _isEditing = false;
-  bool _isFormExpanded = false;
-
   void _addDosage() async {
-  final TimeOfDay? pickedTime = await showTimePicker(
-    context: context,
-    initialTime: TimeOfDay.now(),
-  );
-
-  if (pickedTime != null) {
-    int selectedQuantity = 1;
-    final quantity = await showDialog<int>(
+    final TimeOfDay? pickedTime = await showTimePicker(
       context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Medicine Quantity'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('How many tablets should be taken?'),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.remove),
-                        onPressed: () {
-                          if (selectedQuantity > 1) {
-                            setState(() => selectedQuantity--);
-                          }
-                        },
-                      ),
-                      const SizedBox(width: 20),
-                      Text(
-                        '$selectedQuantity',
-                        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(width: 20),
-                      IconButton(
-                        icon: const Icon(Icons.add),
-                        onPressed: () {
-                          if (selectedQuantity < 10) {
-                            setState(() => selectedQuantity++);
-                          }
-                        },
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  SizedBox(
-                    width: 200,
-                    child: Slider(
-                      value: selectedQuantity.toDouble(),
-                      min: 1,
-                      max: 10,
-                      divisions: 9,
-                      label: selectedQuantity.toString(),
-                      onChanged: (value) {
-                        setState(() {
-                          selectedQuantity = value.toInt();
-                        });
-                      },
-                    ),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel'),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.pop(context, selectedQuantity),
-                  child: const Text('Confirm'),
-                ),
-              ],
-            );
-          },
-        );
-      },
+      initialTime: TimeOfDay.now(),
     );
 
-    if (quantity != null) {
-      setState(() {
-        _dosages.add(Dosage(time: pickedTime, quantity: quantity));
-      });
+    if (pickedTime != null) {
+      int selectedQuantity = 1;
+      final quantity = await showDialog<int>(
+        context: context,
+        builder: (context) {
+          return StatefulBuilder(
+            builder: (context, setState) {
+              return AlertDialog(
+                title: const Text('Medicine Quantity'),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('How many tablets should be taken?'),
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.remove),
+                          onPressed: () {
+                            if (selectedQuantity > 1) {
+                              setState(() => selectedQuantity--);
+                            }
+                          },
+                        ),
+                        const SizedBox(width: 20),
+                        Text(
+                          '$selectedQuantity',
+                          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(width: 20),
+                        IconButton(
+                          icon: const Icon(Icons.add),
+                          onPressed: () {
+                            if (selectedQuantity < 10) {
+                              setState(() => selectedQuantity++);
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      width: 200,
+                      child: Slider(
+                        value: selectedQuantity.toDouble(),
+                        min: 1,
+                        max: 10,
+                        divisions: 9,
+                        label: selectedQuantity.toString(),
+                        onChanged: (value) {
+                          setState(() {
+                            selectedQuantity = value.toInt();
+                          });
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Cancel'),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, selectedQuantity),
+                    child: const Text('Confirm'),
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      );
+
+      if (quantity != null) {
+        setState(() {
+          _dosages.add(Dosage(time: pickedTime, quantity: quantity));
+        });
+      }
     }
   }
-}
 
   Future<void> _saveMedicine() async {
     if (_selectedElderly == null) {
@@ -404,13 +404,7 @@ class _YoungMedicinePageState extends State<Young_MedicinePage> {
                       .collection('medicines')
                       .where('id', isEqualTo: id)
                       .get();
-                  // print(id);
-                  print('Deleting medicine with ID: $id');
-                  print('memberID: $memberId');
                   if (medicineSnapshot.docs.isNotEmpty) {
-                    for(var doc in medicineSnapshot.docs){
-                        print('Found document ID: ${doc.id}');
-                    }
                     await FirebaseFirestore.instance
                         .collection('users')
                         .doc(memberId)
@@ -444,7 +438,7 @@ class _YoungMedicinePageState extends State<Young_MedicinePage> {
         ],
       ),
     ).then((_) {
-      _fetchMedicines(); // reload
+      _fetchMedicines();
     });
   }
 
@@ -468,6 +462,465 @@ class _YoungMedicinePageState extends State<Young_MedicinePage> {
     });
   }
 
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'Medicine Management',
+          style: TextStyle(fontWeight: FontWeight.bold,
+          color: Colors.white),
+        ),
+        centerTitle: true,
+        backgroundColor: AppColors.titleGreen,
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
+      body: Container(
+        color: Colors.grey[100],
+        child: Column(
+          children: [
+            Card(
+              margin: const EdgeInsets.all(12),
+              elevation: 4,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+                height: _isFormExpanded ? min(MediaQuery.of(context).size.height * 0.6 - 40, 600) : 48,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: SingleChildScrollView(
+                  physics: const ClampingScrollPhysics(),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.titleGreen.withOpacity(0.1),
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(12),
+                            topRight: Radius.circular(12),
+                          ),
+                        ),
+                        child: ListTile(
+                          title: Text(
+                            _isEditing ? 'Edit Medicine' : 'Add New Medicine',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.titleGreen,
+                            ),
+                          ),
+                          trailing: _isEditing
+                              ? IconButton(
+                                  icon: const Icon(Icons.close, color: Colors.black),
+                                  onPressed: () {
+                                    setState(() {
+                                      _isFormExpanded = false;
+                                      _resetForm();
+                                    });
+                                  },
+                                )
+                              : IconButton(
+                                  icon: Icon(
+                                    _isFormExpanded
+                                        ? Icons.keyboard_arrow_up
+                                        : Icons.keyboard_arrow_down,
+                                    color: Colors.black,
+                                  ),
+                                  onPressed: _toggleFormExpansion,
+                                ),
+                        ),
+                      ),
+                      if (_isFormExpanded) ...[
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const SizedBox(height: 10),
+                              DropdownButtonFormField<String>(
+                                value: _selectedElderly,
+                                decoration: InputDecoration(
+                                  labelText: 'Select Elderly',
+                                  labelStyle: const TextStyle(color: Colors.black87),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  filled: true,
+                                  fillColor: Colors.grey[50],
+                                ),
+                                items: _elderlyList.map((elderly) {
+                                  return DropdownMenuItem(
+                                    value: elderly,
+                                    child: Text(
+                                      elderly,
+                                      style: const TextStyle(color: Colors.black),
+                                    ),
+                                  );
+                                }).toList(),
+                                onChanged: (value) {
+                                  setState(() {
+                                    _selectedElderly = value;
+                                  });
+                                },
+                              ),
+                              const SizedBox(height: 20),
+
+                              TextField(
+                                controller: _medicineNameController,
+                                decoration: InputDecoration(
+                                  labelText: 'Medicine Name',
+                                  labelStyle: const TextStyle(color: Colors.black87),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  hintText: 'Enter medicine name',
+                                  filled: true,
+                                  fillColor: Colors.grey[50],
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+
+                              DropdownButtonFormField<String>(
+                                value: _mealTime,
+                                items: ['Before Meal', 'After Meal']
+                                    .map((e) => DropdownMenuItem(
+                                          value: e,
+                                          child: Text(
+                                            e,
+                                            style: const TextStyle(color: Colors.black),
+                                          ),
+                                        ))
+                                    .toList(),
+                                onChanged: (value) => setState(() => _mealTime = value!),
+                                decoration: InputDecoration(
+                                  labelText: 'Meal Time',
+                                  labelStyle: const TextStyle(color: Colors.black87),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  filled: true,
+                                  fillColor: Colors.grey[50],
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+
+                              _buildFrequencySelector(),
+
+                              const Text(
+                                'Time & Quantity',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              if (_dosages.isEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                                  child: Text(
+                                    'No dosages added yet',
+                                    style: TextStyle(color: Colors.grey[600]),
+                                  ),
+                                ),
+                              ..._dosages.map((dosage) => Card(
+                                    margin: const EdgeInsets.symmetric(vertical: 4),
+                                    color: Colors.grey[50],
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Row(
+                                        children: [
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  'Time: ${dosage.time.format(context)}',
+                                                  style: const TextStyle(
+                                                    fontSize: 14,
+                                                    color: Colors.black87,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  'Quantity: ${dosage.quantity} piece${dosage.quantity > 1 ? 's' : ''}',
+                                                  style: const TextStyle(
+                                                    fontSize: 14,
+                                                    color: Colors.black87,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          IconButton(
+                                            icon: const Icon(Icons.delete, color: Colors.red),
+                                            onPressed: () => setState(() => _dosages.remove(dosage)),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  )).toList(),
+                              ElevatedButton.icon(
+                                onPressed: _addDosage,
+                                icon: const Icon(Icons.add, color: Colors.white),
+                                label: const Text(
+                                  'Add Time & Quantity',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.titleGreen,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 12),
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+
+                              const Text(
+                                'Custom Note for Elderly',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              TextField(
+                                controller: _noteController,
+                                maxLines: 3,
+                                decoration: InputDecoration(
+                                  labelText: 'Write your note here...',
+                                  labelStyle: const TextStyle(color: Colors.black87),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  hintText: 'Any special instructions...',
+                                  filled: true,
+                                  fillColor: Colors.grey[50],
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  ElevatedButton(
+                                    onPressed: _saveMedicine,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppColors.titleGreen,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 24, vertical: 12),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      _isEditing ? 'Update Medicine' : 'Add Medicine',
+                                      style: const TextStyle(color: Colors.white),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+
+            Expanded(
+              child: Card(
+                margin: const EdgeInsets.all(12),
+                elevation: 4,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        if (_isEditing) {
+                          setState(() {
+                            _isFormExpanded = false;
+                            _resetForm();
+                          });
+                        } else {
+                          _toggleFormExpansion();
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.only(top: 12, bottom: 12),
+                        decoration: BoxDecoration(
+                          color: AppColors.titleGreen.withOpacity(0.1),
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(12),
+                            topRight: Radius.circular(12),
+                          ),
+                        ),
+                        child: Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (!_isEditing) ...[
+                                Container(
+                                  width: 40,
+                                  height: 20,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[200],
+                                    borderRadius: const BorderRadius.only(
+                                      bottomLeft: Radius.circular(20),
+                                      bottomRight: Radius.circular(20),
+                                    ),
+                                  ),
+                                  child: Icon(
+                                    _isFormExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                                    size: 20,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                              ],
+                              Text(
+                                'Current Medicines (${_medicines.length})',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  color: AppColors.titleGreen,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: _medicines.isEmpty
+                          ? Center(
+                              child: Text(
+                                'No medicines added yet',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            )
+                          : ListView.builder(
+                              itemCount: _medicines.length,
+                              itemBuilder: (context, index) {
+                                final medicine = _medicines[index];
+                                return Card(
+                                  margin: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
+                                  elevation: 2,
+                                  color: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: ListTile(
+                                    title: Text(
+                                      medicine.name,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                    subtitle: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          'For: ${medicine.elderlyName ?? "Not specified"}',
+                                          style: TextStyle(color: Colors.grey[800]),
+                                        ),
+                                        Text(
+                                          'Meal: ${medicine.mealTime}',
+                                          style: TextStyle(color: Colors.grey[800]),
+                                        ),
+                                        if (medicine.frequency.isNotEmpty)
+                                          Padding(
+                                            padding: const EdgeInsets.only(top: 4),
+                                            child: Text(
+                                              'Frequency: ${medicine.frequency.join(', ')}',
+                                              style: TextStyle(
+                                                fontSize: 13,
+                                                color: Colors.grey[800],
+                                              ),
+                                            ),
+                                          ),
+                                        if (medicine.dosages.isNotEmpty)
+                                          Padding(
+                                            padding: const EdgeInsets.only(top: 4),
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: medicine.dosages.map((dosage) => Text(
+                                                '${dosage.time.format(context)} - ${dosage.quantity} piece${dosage.quantity > 1 ? 's' : ''}',
+                                                style: TextStyle(
+                                                  fontSize: 13,
+                                                  color: Colors.grey[800],
+                                                ),
+                                              )).toList(),
+                                            ),
+                                          ),
+                                        if (medicine.note.isNotEmpty)
+                                          Padding(
+                                            padding: const EdgeInsets.only(top: 4),
+                                            child: Text(
+                                              'Note: ${medicine.note}',
+                                              style: TextStyle(
+                                                fontSize: 13,
+                                                fontStyle: FontStyle.italic,
+                                                color: Colors.grey[800],
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                    trailing: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        IconButton(
+                                          icon: const Icon(Icons.edit, color: Colors.blue),
+                                          onPressed: () => _editMedicine(medicine),
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.delete, color: Colors.red),
+                                          onPressed: () => _deleteMedicine(medicine.id),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildFrequencySelector() {
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -476,7 +929,11 @@ class _YoungMedicinePageState extends State<Young_MedicinePage> {
       children: [
         const Text(
           'What day should this medication be consumed?',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
         ),
         const SizedBox(height: 10),
         Wrap(
@@ -500,13 +957,17 @@ class _YoungMedicinePageState extends State<Young_MedicinePage> {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: isSelected ? AppColors.titleGreen : Colors.grey[300],
+                  border: Border.all(
+                    width: 1,
+                  ),
                 ),
                 alignment: Alignment.center,
                 child: Text(
                   day,
                   style: TextStyle(
-                    color: isSelected ? Colors.white : Colors.black,
+                    color: isSelected ? Colors.white : Colors.black87,
                     fontSize: 14,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
@@ -519,331 +980,9 @@ class _YoungMedicinePageState extends State<Young_MedicinePage> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Medicine Management'),
-      ),
-      body: Column(
-        children: [
-          //form Section
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
-            height: _isFormExpanded ? min(MediaQuery.of(context).size.height * 0.7 - 45 , 600) : 48,
-            child: SingleChildScrollView(
-              physics: const ClampingScrollPhysics(),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ListTile(
-                    title: Text(
-                      _isEditing ? 'Edit Medicine' : 'Add New Medicine',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    trailing: _isEditing
-                        ? IconButton(
-                            icon: const Icon(Icons.close),
-                            onPressed: () {
-                              setState(() {
-                                _isFormExpanded = false;
-                                _resetForm();
-                              });
-                            },
-                          )
-                        : IconButton(
-                            icon: Icon(
-                              _isFormExpanded
-                                  ? Icons.keyboard_arrow_up
-                                  : Icons.keyboard_arrow_down,
-                            ),
-                            onPressed: _toggleFormExpansion,
-                          ),
-                  ),
-                  if (_isFormExpanded) ...[
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          DropdownButtonFormField<String>(
-                            value: _selectedElderly,
-                            decoration: const InputDecoration(
-                              labelText: 'Select Elderly',
-                              border: OutlineInputBorder(),
-                            ),
-                            items: _elderlyList.map((elderly) {
-                              return DropdownMenuItem(
-                                value: elderly,
-                                child: Text(elderly),
-                              );
-                            }).toList(),
-                            onChanged: (value) {
-                              setState(() {
-                                _selectedElderly = value;
-                              });
-                            },
-                          ),
-                          const SizedBox(height: 20),
-
-                          TextField(
-                            controller: _medicineNameController,
-                            decoration: const InputDecoration(
-                              labelText: 'Medicine Name',
-                              border: OutlineInputBorder(),
-                              hintText: 'Enter medicine name',
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-
-                          DropdownButtonFormField<String>(
-                            value: _mealTime,
-                            items: ['Before Meal', 'After Meal']
-                                .map((e) => DropdownMenuItem(
-                                      value: e,
-                                      child: Text(e),
-                                    ))
-                                .toList(),
-                            onChanged: (value) => setState(() => _mealTime = value!),
-                            decoration: const InputDecoration(
-                              labelText: 'Meal Time',
-                              border: OutlineInputBorder(),
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-
-                          _buildFrequencySelector(),
-
-                          const Text(
-                            'Time & Quantity',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 10),
-                          if (_dosages.isEmpty)
-                            const Padding(
-                              padding: EdgeInsets.symmetric(vertical: 8.0),
-                              child: Text('No dosages added yet'),
-                            ),
-                          ..._dosages.map((dosage) => Card(
-                                margin: const EdgeInsets.symmetric(vertical: 4),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Row(
-                                    children: [
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              'Time: ${dosage.time.format(context)}',
-                                              style: const TextStyle(fontSize: 14),
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              'Quantity: ${dosage.quantity} piece${dosage.quantity > 1 ? 's' : ''}',
-                                              style: const TextStyle(fontSize: 14),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      IconButton(
-                                        icon: const Icon(Icons.delete, color: Colors.red),
-                                        onPressed: () => setState(() => _dosages.remove(dosage)),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              )).toList(),
-                          ElevatedButton.icon(
-                            onPressed: _addDosage,
-                            icon: const Icon(Icons.add),
-                            label: const Text('Add Time & Quantity'),
-                          ),
-                          const SizedBox(height: 20),
-
-                          const Text(
-                            'Custom Note for Elderly',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 10),
-                          TextField(
-                            controller: _noteController,
-                            maxLines: 3,
-                            decoration: const InputDecoration(
-                              labelText: 'Write your note here...',
-                              border: OutlineInputBorder(),
-                              hintText: 'Any special instructions...',
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              ElevatedButton(
-                                onPressed: _saveMedicine,
-                                style: ElevatedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                                ),
-                                child: Text(_isEditing ? 'Update Medicine' : 'Add Medicine'),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                        ],
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-          const Divider(height: 1),
-          // Medicines List Section
-          Expanded(
-            child: Column(
-              children: [
-                GestureDetector(
-                  onTap: () {
-                    if (_isEditing) {
-                      setState(() {
-                        _isFormExpanded = false;
-                        _resetForm();
-                      });
-                    } else {
-                      _toggleFormExpansion();
-                    }
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.only(top: 8, bottom: 12),
-                    decoration: BoxDecoration(
-                      border: Border(
-                        bottom: BorderSide(
-                          color: Theme.of(context).dividerColor,
-                          width: 1,
-                        ),
-                      ),
-                    ),
-                    child: Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (!_isEditing) ...[
-                            Container(
-                              width: 40,
-                              height: 20,
-                              decoration: BoxDecoration(
-                                color: Colors.grey[200],
-                                borderRadius: const BorderRadius.only(
-                                  bottomLeft: Radius.circular(20),
-                                  bottomRight: Radius.circular(20),
-                                ),
-                              ),
-                              child: Icon(
-                                _isFormExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                                size: 20,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                          ],
-                          Text(
-                            'Current Medicines (${_medicines.length})',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: _medicines.isEmpty
-                      ? const Center(
-                          child: Text(
-                            'No medicines added yet',
-                            style: TextStyle(fontSize: 16, color: Colors.grey),
-                          ),
-                        )
-                      : ListView.builder(
-                          itemCount: _medicines.length,
-                          itemBuilder: (context, index) {
-                            final medicine = _medicines[index];
-                            return Card(
-                              margin: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              elevation: 1,
-                              child: ListTile(
-                                title: Text(
-                                  medicine.name,
-                                  style: const TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const SizedBox(height: 4),
-                                    Text('For: ${medicine.elderlyName ?? "Not specified"}'),
-                                    Text('Meal: ${medicine.mealTime}'),
-                                    if (medicine.frequency.isNotEmpty)
-                                      Padding(
-                                        padding: const EdgeInsets.only(top: 4),
-                                        child: Text(
-                                          'Frequency: ${medicine.frequency.join(', ')}',
-                                          style: const TextStyle(fontSize: 13),
-                                        ),
-                                      ),
-                                    if (medicine.dosages.isNotEmpty)
-                                      Padding(
-                                        padding: const EdgeInsets.only(top: 4),
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: medicine.dosages.map((dosage) => Text(
-                                            '${dosage.time.format(context)} - ${dosage.quantity} piece${dosage.quantity > 1 ? 's' : ''}',
-                                            style: const TextStyle(fontSize: 13),
-                                          )).toList(),
-                                        ),
-                                      ),
-                                    if (medicine.note.isNotEmpty)
-                                      Padding(
-                                        padding: const EdgeInsets.only(top: 4),
-                                        child: Text(
-                                          'Note: ${medicine.note}',
-                                          style: const TextStyle(
-                                            fontSize: 13,
-                                            fontStyle: FontStyle.italic,
-                                          ),
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                                trailing: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    IconButton(
-                                      icon: const Icon(Icons.edit, color: Colors.blue),
-                                      onPressed: () => _editMedicine(medicine),
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(Icons.delete, color: Colors.red),
-                                      onPressed: () => _deleteMedicine(medicine.id),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
+  void dispose() {
+    _medicineNameController.dispose();
+    _noteController.dispose();
+    super.dispose();
   }
 }

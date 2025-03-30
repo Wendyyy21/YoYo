@@ -17,6 +17,10 @@ class _LoginPageState extends State<LoginPage> {
   TextEditingController usernameController = TextEditingController();
   TextEditingController pwController = TextEditingController();
   bool _obscureText = true;
+  
+  // Add focus nodes
+  FocusNode emailFocusNode = FocusNode();
+  FocusNode passwordFocusNode = FocusNode();
 
   Future<void> validateInput(
     TextEditingController usernameController,
@@ -89,6 +93,8 @@ class _LoginPageState extends State<LoginPage> {
   void dispose() {
     usernameController.dispose();
     pwController.dispose();
+    emailFocusNode.dispose();
+    passwordFocusNode.dispose();
     super.dispose();
   }
 
@@ -116,10 +122,16 @@ class _LoginPageState extends State<LoginPage> {
                   width: 350.0,
                   child: TextField(
                     controller: usernameController,
+                    focusNode: emailFocusNode,
                     decoration: const InputDecoration(
                       hintText: 'Email',
                       border: OutlineInputBorder(),
                     ),
+                    textInputAction: TextInputAction.next,
+                    onSubmitted: (_) {
+                      // Move focus to password field when Enter is pressed
+                      FocusScope.of(context).requestFocus(passwordFocusNode);
+                    },
                   ),
                 ),
                 const SizedBox(height: 10.0),
@@ -127,6 +139,7 @@ class _LoginPageState extends State<LoginPage> {
                   width: 350.0,
                   child: TextField(
                     controller: pwController,
+                    focusNode: passwordFocusNode,
                     obscureText: _obscureText,
                     decoration: InputDecoration(
                       hintText: 'Password',
@@ -144,6 +157,11 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                     ),
+                    textInputAction: TextInputAction.go,
+                    onSubmitted: (_) {
+                      // Submit the form when Enter is pressed in password field
+                      validateInput(usernameController, pwController);
+                    },
                   ),
                 ),
                 const SizedBox(height: 20.0),

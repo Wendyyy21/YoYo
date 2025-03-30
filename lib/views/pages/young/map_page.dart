@@ -89,9 +89,14 @@ class _YoungMapState extends State<Young_MapPage> {
             markerId: MarkerId(elderName),
             position: latLng,
             infoWindow: InfoWindow(title: elderName),
+            icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
           ),
         };
       });
+
+      // Move camera to the location
+      final GoogleMapController controller = await _controller.future;
+      controller.animateCamera(CameraUpdate.newLatLngZoom(latLng, 15));
     } catch (e) {
       print('Error fetching elder location: $e');
       setState(() {
@@ -105,182 +110,218 @@ class _YoungMapState extends State<Young_MapPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Find Your Elderly',
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          color:Colors.black,
+        title: const Text(
+          'Find Your Elderly',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
           ),
         ),
         centerTitle: true,
-        backgroundColor:Colors.transparent,
+        backgroundColor: AppColors.titleGreen,
+        iconTheme: const IconThemeData(color: Colors.white),
         elevation: 0,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const SizedBox(height: 8),
-            // Map Placeholder Card or Google Map
-            Card(
-              elevation: 5,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: SizedBox(
-                height: 200,
-                child: _elderlyLocation != null
-                    ? GoogleMap(
-                        mapType: MapType.normal,
-                        initialCameraPosition: CameraPosition(
-                          target: _elderlyLocation!,
-                          zoom: 15,
-                        ),
-                        onMapCreated: (GoogleMapController controller) {
-                          _controller.complete(controller);
-                        },
-                        markers: _markers,
-                      )
-                    : Container(
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.map,
-                                  size: 50, color: AppColors.titleGreen),
-                              const SizedBox(height: 10),
-                              Text(
-                                'Google Map will appear here',
-                                style: TextStyle(
-                                    color: Colors.grey[700], fontSize: 16),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Card(
-              elevation: 3,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Select Elderly to Find",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey[800],
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    DropdownButtonFormField<String>(
-                      value: _selectedElderly,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 12),
-                      ),
-                      hint: const Text("Choose an elderly"),
-                      items: _elderlyList.map((elderly) {
-                        return DropdownMenuItem(
-                          value: elderly,
-                          child: Text(elderly),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedElderly = value;
-                          _fetchElderLocation(value!);
-                        });
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Card(
-              elevation: 3,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.location_on,
-                      color: AppColors.titleGreen,
-                      size: 28,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "Current Status:",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey[800],
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            _selectedElderly != null
-                                ? "Finding ${_selectedElderly}"
-                                : "No elderly selected",
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _selectedElderly != null
-                  ? () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text("Finding ${_selectedElderly}..."),
-                        ),
-                      );
-                    }
-                  : null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.titleGreen,
-                padding: const EdgeInsets.symmetric(vertical: 16),
+      body: Container(
+        color: Colors.grey[100],
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Map Card
+              Card(
+                elevation: 4,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-              ),
-              child: const Text(
-                'Find',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: SizedBox(
+                    height: 250,
+                    child: _elderlyLocation != null
+                        ? GoogleMap(
+                            mapType: MapType.normal,
+                            initialCameraPosition: CameraPosition(
+                              target: _elderlyLocation!,
+                              zoom: 15,
+                            ),
+                            onMapCreated: (GoogleMapController controller) {
+                              _controller.complete(controller);
+                            },
+                            markers: _markers,
+                            myLocationEnabled: true,
+                            myLocationButtonEnabled: true,
+                          )
+                        : Container(
+                            color: Colors.grey[50],
+                            child: Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.map_outlined,
+                                    size: 50,
+                                    color: AppColors.titleGreen,
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Text(
+                                    'Select an elderly to view their location',
+                                    style: TextStyle(
+                                      color: Colors.grey[600],
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                  ),
                 ),
               ),
-            ),
-          ],
+              const SizedBox(height: 20),
+
+              // Elderly Selection Card
+              Card(
+                elevation: 4,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Select Elderly",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey[800],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      DropdownButtonFormField<String>(
+                        value: _selectedElderly,
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                        ),
+                        hint: const Text("Choose an elderly"),
+                        items: _elderlyList.map((elderly) {
+                          return DropdownMenuItem(
+                            value: elderly,
+                            child: Text(
+                              elderly,
+                              style: const TextStyle(color: Colors.black87),
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedElderly = value;
+                            _fetchElderLocation(value!);
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Status Card
+              Card(
+                elevation: 4,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.titleGreen.withOpacity(0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.location_on,
+                          color: AppColors.titleGreen,
+                          size: 28,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Current Status:",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey[800],
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _selectedElderly != null
+                                  ? "Tracking ${_selectedElderly}'s location"
+                                  : "No elderly selected",
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Find Button
+              ElevatedButton(
+                onPressed: _selectedElderly != null
+                    ? () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text("Locating ${_selectedElderly}..."),
+                            backgroundColor: Colors.grey[600],
+                          ),
+                        );
+                      }
+                    : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.titleGreen,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 4,
+                ),
+                child: const Text(
+                  'Find Location',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
         ),
       ),
     );
