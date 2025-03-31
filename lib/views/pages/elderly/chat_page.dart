@@ -41,15 +41,26 @@ class _Elderly_ChatPageState extends State<Elderly_ChatPage> {
 
     _model = GenerativeModel(
       model: 'gemini-2.0-flash', // Correct model name
-      apiKey: apiKey
+      apiKey: apiKey,
     );
-    _chat.add(Content('user', [ // Use add to add to list
-      TextPart('You are a helpful assistant for elderly people.'),
-      TextPart('Your name is YoYo. Please keep the conversation light and friendly.'),
-      TextPart('You can help elderly people with their daily tasks and provide companionship.'),
-      TextPart('You can also provide information on various topics and answer questions.'),
-      TextPart('But keep the responses short (a paragraph), unless otherwise requested.'),
-    ]));
+    _chat.add(
+      Content('user', [
+        // Use add to add to list
+        TextPart('You are a helpful assistant for elderly people.'),
+        TextPart(
+          'Your name is YoYo. Please keep the conversation light and friendly.',
+        ),
+        TextPart(
+          'You can help elderly people with their daily tasks and provide companionship.',
+        ),
+        TextPart(
+          'You can also provide information on various topics and answer questions.',
+        ),
+        TextPart(
+          'But keep the responses short (a paragraph), unless otherwise requested.',
+        ),
+      ]),
+    );
   }
 
   Future<void> updateChat(String userText, String aiText) async {
@@ -69,7 +80,9 @@ class _Elderly_ChatPageState extends State<Elderly_ChatPage> {
 
     setState(() {
       messages.add(SizedBox(height: 10.0));
-      messages.add(AIMessageWidget(response: '', isLoading: true)); //show loading indicator
+      messages.add(
+        AIMessageWidget(response: '', isLoading: true),
+      ); //show loading indicator
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (scrollController.hasClients) {
@@ -94,7 +107,12 @@ class _Elderly_ChatPageState extends State<Elderly_ChatPage> {
       } else {
         setState(() {
           messages.removeLast(); //remove loading indicator
-          messages.add(AIMessageWidget(response: "Error: Could not get a response", isLoading: false));
+          messages.add(
+            AIMessageWidget(
+              response: "Error: Could not get a response",
+              isLoading: false,
+            ),
+          );
         });
       }
     } catch (e) {
@@ -104,6 +122,7 @@ class _Elderly_ChatPageState extends State<Elderly_ChatPage> {
       });
     }
   }
+
   @override
   void dispose() {
     userInputController.dispose();
@@ -115,6 +134,14 @@ class _Elderly_ChatPageState extends State<Elderly_ChatPage> {
   Widget build(BuildContext context) {
     return Column(
       children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 8.0),
+          child: Text(
+            'Powered by Google Gemini',
+            style: TextStyle(fontSize: 12, color: Colors.grey),
+            textAlign: TextAlign.center,
+          ),
+        ),
         Expanded(
           child: SingleChildScrollView(
             controller: scrollController,
@@ -158,10 +185,8 @@ class _Elderly_ChatPageState extends State<Elderly_ChatPage> {
                       hintText: 'Type anything',
                       border: OutlineInputBorder(),
                     ),
-                    onSubmitted:  (value) {
-                      updateChat(
-                      userInputController.text,
-                      '');
+                    onSubmitted: (value) {
+                      updateChat(userInputController.text, '');
 
                       userInputController.clear();
                     },
