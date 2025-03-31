@@ -65,6 +65,22 @@ class _Elderly_ProfilePageState extends State<Elderly_ProfilePage> {
     );
   }
 
+  Future<void> _logout() async {
+    try {
+      await FirebaseAuth.instance.signOut();
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const WelcomePage()),
+        (route) => false,
+      );
+    } catch (e) {
+      print('Error signing out: $e');
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to logout: $e')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -152,17 +168,7 @@ class _Elderly_ProfilePageState extends State<Elderly_ProfilePage> {
                   ListTile(
                     title: const Text('Log out'),
                     leading: const Icon(Icons.logout),
-                    onTap: () {
-                      Navigator.pushAndRemoveUntil(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) {
-                            return const WelcomePage();
-                          },
-                        ),
-                        (route) => false,
-                      );
-                    },
+                    onTap: _logout,
                   ),
                 ],
               ),

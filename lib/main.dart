@@ -1,4 +1,3 @@
-// main.dart
 import 'package:flutter/material.dart';
 import 'package:frontend/views/pages/welcome_page.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -23,9 +22,7 @@ Future<void> main() async {
   }
 
   // Initialize Firebase (common for both web and native).
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   runApp(const MyApp());
 }
