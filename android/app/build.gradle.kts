@@ -1,11 +1,9 @@
 plugins {
     id("com.android.application")
-    // START: FlutterFire Configuration
-    id("com.google.gms.google-services")
-    // END: FlutterFire Configuration
+    id("com.google.gms.google-services")  // FlutterFire
     id("kotlin-android")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+    id("com.google.android.gms.oss-licenses-plugin") version "0.10.6"  // Add this line
 }
 
 val backgroundGeolocation = project(":flutter_background_geolocation")
@@ -26,10 +24,7 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.petrichor4.yoyo"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 23
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
@@ -38,12 +33,15 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
             isShrinkResources = false
         }
     }
+}
+
+dependencies {
+    implementation("com.google.android.gms:play-services-oss-licenses:17.0.1")  // Add this line
+    implementation(project(":flutter_background_geolocation"))  // Keep existing
 }
 
 flutter {

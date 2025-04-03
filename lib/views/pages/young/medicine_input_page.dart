@@ -488,7 +488,7 @@ class _YoungMedicinePageState extends State<Young_MedicinePage> {
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
                 curve: Curves.easeInOut,
-                height: _isFormExpanded ? min(MediaQuery.of(context).size.height * 0.6 - 40, 600) : 48,
+                height: _isFormExpanded ? min(MediaQuery.of(context).size.height * 0.6 - 60, 600) : 48,
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
