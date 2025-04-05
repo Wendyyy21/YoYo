@@ -31,7 +31,7 @@ According to the United Nations Development Programme (UNDP), the proportion of 
    ```flutter emulators --launch <emulator_id>```
 4. Run the app<br>
    ```flutter run```
-5. Create your own account OR Log into the app using these sample credentials
+5. Create your own account OR Log into the app using these sample credentials<br>
    **Young user:**<br>
    Username: oopds@gmail.com<br>
    Password: oopds123
